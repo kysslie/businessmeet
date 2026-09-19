@@ -266,6 +266,11 @@ Notes for later features:
 - F8: deleting an auth user does NOT delete Storage files. The delete-account code must first remove everything under `avatars/{user_id}/` (with the secret key), then delete the user. Add a test.
 - F6: the plain Node 20 runtime has no built-in WebSocket; Next.js/Vercel handle it, but check realtime works in local dev on Node 20.
 
+**Pending tests for Elie** (untested by him; the 2-emails-per-hour limit locked him out on 2026-09-19 and he chose to test everything in one go later; a feature is only complete when he confirms it). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`.
+- F3: real-account onboarding on the live site and on his phone (validation messages, city/pitch boxes, photo upload, save, edit, replace/remove photo, phone layout, redirects between /onboarding, /profile, /feed). I tested only locally with a throwaway user and could not take screenshots.
+- F2 leftovers: opening the login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link.
+- F4 items get added here when shipped.
+
 **Ideas file:** `ideas.txt` in the project root is Elie's private scratchpad for future ideas. It is git-ignored (never committed). Read it at the start of each session; move anything worth keeping into the Backlog below, in Elie's words.
 
 **Backlog (post-MVP):**
