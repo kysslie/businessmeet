@@ -55,6 +55,18 @@ declare
     {"n":"setup: add an inactive skill","as":"admin","sql":"insert into public.skills (slug, name, is_active) values ('test_inactive','Inactive test skill',false)","expect":"rows=1"},
     {"n":"profile_skills: cannot pick an inactive skill","as":"alice","sql":"insert into public.profile_skills (profile_id, skill_id, kind) select '{alice}', id, 'seeks' from public.skills where slug='test_inactive'","expect":"error=row-level security"},
 
+    {"n":"avatars: bucket is private, 2 MB, jpeg/png/webp only","as":"admin","sql":"select 1 from storage.buckets where id='avatars' and not public and file_size_limit=2097152 and allowed_mime_types=array['image/jpeg','image/png','image/webp']","expect":"rows=1"},
+    {"n":"avatars: the three storage rules exist","as":"admin","sql":"select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'avatars:%'","expect":"rows=3"},
+    {"n":"avatars: alice uploads into her own folder","as":"alice","sql":"insert into storage.objects (bucket_id, name) values ('avatars','{alice}/photo1.jpg')","expect":"rows=1"},
+    {"n":"avatars: alice cannot upload into bob's folder","as":"alice","sql":"insert into storage.objects (bucket_id, name) values ('avatars','{bob}/photo2.jpg')","expect":"error=row-level security"},
+    {"n":"avatars: cannot upload at the top level of the bucket","as":"alice","sql":"insert into storage.objects (bucket_id, name) values ('avatars','loose.jpg')","expect":"error=row-level security"},
+    {"n":"avatars: another logged-in user can read alice's photo","as":"bob","sql":"select 1 from storage.objects where bucket_id='avatars'","expect":"rows=1"},
+    {"n":"avatars: logged-out visitor cannot see photos","as":"anon","sql":"select 1 from storage.objects where bucket_id='avatars'","expect":"rows=0"},
+    {"n":"avatars: logged-out visitor cannot upload","as":"anon","sql":"insert into storage.objects (bucket_id, name) values ('avatars','{alice}/anon.jpg')","expect":"error=row-level security"},
+    {"n":"profiles: avatar_path inside own folder is accepted","as":"alice","sql":"update public.profiles set avatar_path='{alice}/photo1.jpg' where id='{alice}'","expect":"rows=1"},
+    {"n":"profiles: avatar_path pointing into someone else's folder is rejected","as":"alice","sql":"update public.profiles set avatar_path='{bob}/photo1.jpg' where id='{alice}'","expect":"error=profiles_avatar_path_own_folder"},
+    {"n":"profiles: avatar_path can be cleared","as":"alice","sql":"update public.profiles set avatar_path=null where id='{alice}'","expect":"rows=1"},
+
     {"n":"swipes: alice likes bob","as":"alice","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{alice}','{bob}','like')","expect":"rows=1"},
     {"n":"swipes: cannot swipe as someone else","as":"alice","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{bob}','{alice}','like')","expect":"error=row-level security"},
     {"n":"swipes: cannot swipe on yourself","as":"alice","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{alice}','{alice}','like')","expect":"error=swipes_not_self"},

@@ -249,7 +249,7 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 - F2 — Magic-link login, logout, route protection (confirmed by Elie 2026-09-19: login works, session survives refresh, logout works, logged-out `/feed` redirects to `/login`). Packages added: `@supabase/supabase-js`, `@supabase/ssr`, `zod`. First real-email test failed (standard link returns `?code=`, first version only understood `token_hash`); fixed in `auth/callback/route.ts`. Elie decided to live with the standard email for now (DEBT-001).
 
-**In progress:** none. F3 plan to be presented to Elie (it adds a storage bucket, so it needs his OK).
+**In progress:** F3 — Onboarding and profile edit, including photo upload. Elie approved the plan 2026-09-19 (photo optional; at least 1 offered skill required; private `avatars` bucket). Built: migration `20260919160000_avatars_storage.sql` (applied), `/onboarding`, `/profile`, `saveProfile` server action, photo shrinking in the browser, feed placeholder redirects to onboarding. Tested by me with a throwaway user (since deleted): validation errors, conditional city/pitch, 5.7 MB photo shrunk to 114 KB, save, edit, photo replace (old file deleted), photo remove, category auto-selected, signed photo link loads. RLS test script: 94/94. NOT yet tested by Elie with his real account/phone. Waiting on: Elie's test.
 
 Rule for schema changes: all table/column/policy changes go through a new numbered file in `supabase/migrations/`, never through the Supabase dashboard's Table Editor (dashboard edits are not recorded in the repo and new columns would miss the grants). Editing data rows in the dashboard (e.g. flipping `categories.is_active`, adding skills) is fine.
 
@@ -259,7 +259,12 @@ How to work with the database from here (no Docker, no password prompt needed on
 - Automatic security check: `npx supabase@2.117.0 db advisors --linked`
 - Every new migration must also revoke default grants and grant only what is needed, then enable RLS (see migration 2).
 
-**Next planned step:** F3 — Onboarding and profile edit, including photo upload
+**Next planned step:** F3 — Elie's real-account test, then F4 (feed and swipe via `get_feed()`).
+
+Notes for later features:
+- F4: `get_feed()` must be `SECURITY DEFINER` with a fixed `search_path` (users cannot read other people's profiles directly); it must return the candidate's skills/categories and enough info to build a signed photo link (`avatar_path`), and signed links for other people's photos are created server-side.
+- F8: deleting an auth user does NOT delete Storage files. The delete-account code must first remove everything under `avatars/{user_id}/` (with the secret key), then delete the user. Add a test.
+- F6: the plain Node 20 runtime has no built-in WebSocket; Next.js/Vercel handle it, but check realtime works in local dev on Node 20.
 
 **Backlog (post-MVP):**
 - Custom email (SMTP) for login: removes the 2-emails-per-hour limit, allows a proper branded email template, and fixes the login link only working in the browser that requested it. See DEBT-001. Elie: fine for now, fix later (re-check at F5, which needs two accounts)
@@ -290,6 +295,7 @@ Format: `date | decision | rejected alternatives | reason`
 - 2026-09-19 | Added optional `profiles.partner_weekly_hours` (hours I'd like a partner to commit; null = no preference) alongside `weekly_hours`; neither filters the feed | Exact hours; nothing new | Elie wants full-timers and part-timers to find each other
 - 2026-09-19 | Sign-up trigger creates an empty profile row for every new auth user; `onboarded` only true when required fields are filled (DB constraint). Length limits chosen: display name 50, city 100, report reason 100, report details 1000 | Client-side profile insert | Profile always exists; rules live in the database
 - 2026-09-19 | F2 login design: Supabase's standard email link (PKCE) returns to `/auth/callback` (route handler) with a one-time `code`, exchanged for a session with `exchangeCodeForSession`; the handler also accepts `token_hash` links for a future custom template; session checked with `getClaims()`; `src/proxy.ts` (not `middleware.ts`, renamed in Next.js 16) guards all pages except `/`, `/login`, `/privacy`, `/auth/*` | Custom email template with `token_hash` and a "Log in" button page (first attempt, built and then removed: hosted Supabase does not allow editing templates without custom SMTP, so real emails carried `?code=` and were rejected as invalid) | Works at zero cost today. Known limits: the link must be opened in the same browser that requested it, and mail scanners can use up the link (see DEBT-001, DEBT-009)
+- 2026-09-19 | F3 profile photos: private `avatars` bucket, path `{user_id}/{random}.{jpg|png|webp}`, 2 MB limit and image types enforced by the bucket; any logged-in user may read, only the owner may add/delete in their own folder; shown via 1-hour signed links; photos shrunk to max 800 px in the browser (built-in canvas, no new package) and uploaded through the `saveProfile` server action (body limit raised to 3 MB); `profiles.avatar_path` must point inside the user's own folder. Photo optional; at least 1 offered skill required (Elie, 2026-09-19) | Public bucket; direct browser upload | Matches the brief ("readable by logged-in users"), one submit, no orphaned files on failed saves
 - 2026-09-19 | Next.js 16.3.5 (React 19, Tailwind 4, ESLint 9) scaffolded with create-next-app; `AGENTS.md` from the scaffold kept (tells AI tools to check bundled Next.js docs) | — | Current stable versions; matches the "check current docs" rule
 
 ## Debt Ledger
@@ -297,6 +303,10 @@ Format: `date | decision | rejected alternatives | reason`
 Tags: `[BLOCKER]` `[HIGH]` `[LOW]`
 
 - [HIGH] DEBT-001 Supabase built-in email: (a) limited to 2 emails per hour for the whole project (docs, 2026-09-19), which limits testing (F5 needs two accounts); (b) email templates cannot be edited without custom SMTP (confirmed by Elie 2026-09-19), so the login link must be opened in the same browser that requested it and mail scanners can use it up. Set up custom SMTP before F5 or before public launch, whichever comes first, then move to a `token_hash` template with a "Log in" button page.
+- [LOW] DEBT-010 "At least one offered skill" is enforced by the app only (`saveProfile`), not by the database, because a CHECK cannot look at another table. Anyone calling the API directly could finish onboarding with no skills. Add a trigger if this matters.
+- [LOW] DEBT-011 `saveProfile` is several separate database calls, not one transaction. If one fails midway the person is asked to save again (the profile row is saved last, so `onboarded` never flips early). Convert to a single database function if it ever causes real problems.
+- [LOW] DEBT-012 Photo links are readable by any logged-in user who knows the exact file path (path contains two random IDs). Accepted for the MVP per the brief; revisit with the profile-visibility rule.
+- [LOW] DEBT-013 Supabase advisor warns "leaked password protection disabled". Not used: login is by magic link only. But Supabase's email provider also allows password sign-up through the API; the app never offers it. Revisit before launch.
 - [HIGH] DEBT-009 On iPhones an installed PWA has separate storage from Safari, so a magic link opened from the mail app logs the user in in Safari, not inside the installed app. Decide before F9 whether to add a 6-digit code option (needs a custom email template, so needs custom SMTP first, see DEBT-001).
 - [HIGH] DEBT-002 Vercel Hobby plan is for non-commercial use. Move to Pro before monetising (check current terms).
 - [LOW] DEBT-003 Supabase free tier pauses inactive projects. Expect to unpause the dev project between sessions (check current policy).
