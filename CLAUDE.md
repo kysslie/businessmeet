@@ -166,7 +166,8 @@ businessmeet/
 │  ├─ app/
 │  │  ├─ page.tsx                     landing
 │  │  ├─ login/page.tsx
-│  │  ├─ auth/callback/route.ts       magic-link handler
+│  │  ├─ auth/callback/page.tsx       magic-link landing page ("Log in" button)
+│  │  ├─ auth/actions.ts              confirmLogin, signOut
 │  │  ├─ onboarding/page.tsx
 │  │  ├─ feed/page.tsx
 │  │  ├─ matches/page.tsx
@@ -184,7 +185,7 @@ businessmeet/
 ├─ supabase/
 │  ├─ migrations/
 │  └─ seed.sql
-├─ middleware.ts                      redirects logged-out users
+├─ src/proxy.ts                       redirects logged-out users (Next.js 16 name for middleware)
 ├─ .env.local.example
 └─ package.json
 ```
@@ -246,7 +247,7 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 - F1 — Schema migrations, RLS policies, seed data (confirmed by Elie 2026-09-19). 3 migrations applied to the hosted dev project. `supabase/tests/rls_smoke_test.sql`: 83/83 checks passed; `db advisors`: no issues; no test data left behind.
 
-**In progress:** none. Waiting on Elie's OK to add `@supabase/supabase-js`, `@supabase/ssr`, `zod` and start F2.
+**In progress:** F2 — Magic-link login, logout, route protection. Elie approved the 3 packages 2026-09-19. Code written; lint, type-check and build pass; logged-out redirects and fake-link rejection tested locally (curl + browser). NOT yet tested with a real email. Waiting on: Elie's Supabase settings (Site URL, Redirect URLs, email templates), then his end-to-end test.
 
 Rule for schema changes: all table/column/policy changes go through a new numbered file in `supabase/migrations/`, never through the Supabase dashboard's Table Editor (dashboard edits are not recorded in the repo and new columns would miss the grants). Editing data rows in the dashboard (e.g. flipping `categories.is_active`, adding skills) is fine.
 
@@ -256,7 +257,7 @@ How to work with the database from here (no Docker, no password prompt needed on
 - Automatic security check: `npx supabase@2.117.0 db advisors --linked`
 - Every new migration must also revoke default grants and grant only what is needed, then enable RLS (see migration 2).
 
-**Next planned step:** F2 — Magic-link login, logout, route protection (needs Supabase Auth URL settings for the Vercel domain; add `@supabase/supabase-js`, `@supabase/ssr`, `zod` per the dependency table, and generate `src/types/database.ts`)
+**Next planned step:** F2 — end-to-end login test with a real email, then F3 (onboarding and profile)
 
 **Backlog (post-MVP):**
 - Email/push notifications on new match (first priority after MVP)
@@ -285,13 +286,15 @@ Format: `date | decision | rejected alternatives | reason`
 - 2026-09-19 | Profile privacy for MVP: users can read only their own profile and their matches' profiles; the swipe feed hands out candidates through the `get_feed()` function (F4). Elie: fine for now, wants people to find each other more easily than in a dating app, revisit after MVP | Letting every logged-in user read all onboarded profiles | Stops scraping of the whole user list; easy to loosen later with a policy change
 - 2026-09-19 | Added optional `profiles.partner_weekly_hours` (hours I'd like a partner to commit; null = no preference) alongside `weekly_hours`; neither filters the feed | Exact hours; nothing new | Elie wants full-timers and part-timers to find each other
 - 2026-09-19 | Sign-up trigger creates an empty profile row for every new auth user; `onboarded` only true when required fields are filled (DB constraint). Length limits chosen: display name 50, city 100, report reason 100, report details 1000 | Client-side profile insert | Profile always exists; rules live in the database
+- 2026-09-19 | F2 login design: the email link carries `token_hash` (customised Supabase email templates using `{{ .RedirectTo }}`) and lands on `/auth/callback`, a page with a "Log in" button that calls `verifyOtp`; session checked with `getClaims()`; `src/proxy.ts` (not `middleware.ts`, renamed in Next.js 16) guards all pages except `/`, `/login`, `/privacy`, `/auth/*` | Default PKCE link (breaks when opened in a different browser than the one that asked for it); a GET route handler that logs in immediately (mail scanners can burn the one-time link) | Works on phones where mail apps open links in their own browser; costs one extra tap
 - 2026-09-19 | Next.js 16.3.5 (React 19, Tailwind 4, ESLint 9) scaffolded with create-next-app; `AGENTS.md` from the scaffold kept (tells AI tools to check bundled Next.js docs) | — | Current stable versions; matches the "check current docs" rule
 
 ## Debt Ledger
 
 Tags: `[BLOCKER]` `[HIGH]` `[LOW]`
 
-- [HIGH] DEBT-001 Supabase built-in email has low send limits. Configure custom SMTP before public launch (check current limits).
+- [HIGH] DEBT-001 Supabase built-in email is limited to 2 emails per hour for the whole project (docs, 2026-09-19). Limits testing now (F5 needs two accounts) and must be replaced with custom SMTP before public launch.
+- [HIGH] DEBT-009 On iPhones an installed PWA has separate storage from Safari, so a magic link opened from the mail app logs the user in in Safari, not inside the installed app. Decide before F9 whether to add a 6-digit code option (`{{ .Token }}` is already available in the email template).
 - [HIGH] DEBT-002 Vercel Hobby plan is for non-commercial use. Move to Pro before monetising (check current terms).
 - [LOW] DEBT-003 Supabase free tier pauses inactive projects. Expect to unpause the dev project between sessions (check current policy).
 - [HIGH] DEBT-004 Privacy policy and terms (including an 18+ age rule) need a real review before launch. What gets drafted here is not legal advice.
