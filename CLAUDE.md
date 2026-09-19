@@ -268,15 +268,18 @@ Notes for later features:
 - F8: deleting an auth user does NOT delete Storage files. The delete-account code must first remove everything under `avatars/{user_id}/` (with the secret key), then delete the user. Add a test.
 - F6: the plain Node 20 runtime has no built-in WebSocket; Next.js/Vercel handle it, but check realtime works in local dev on Node 20.
 
-**Pending tests for Elie** (untested by him; the 2-emails-per-hour limit locked him out on 2026-09-19 and he chose to test everything in one go later; a feature is only complete when he confirms it). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`.
-- Password login (built 2026-09-19, tested by me locally with a throwaway user): Elie logs in on the live site with his temporary password, then changes it on `/profile` ("Password" section); wrong password shows "Email or password is incorrect."; "Create account" works once "Confirm email" is off in Supabase (untested by me, because it would send an email today); the "Forgot your password?" email link still works when email is available.
-- F3: real-account onboarding on the live site and on his phone (validation messages, city/pitch boxes, photo upload, save, edit, replace/remove photo, phone layout, redirects between /onboarding, /profile, /feed). I tested only locally with a throwaway user and could not take screenshots.
-- F2 leftovers: opening the login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link.
-- F4 (feed and swipe), built while Elie waited for the email limit, tested only by me with throwaway users: with real accounts there are no other people yet, so he will see "You're all caught up". To see cards he needs a second real account or demo profiles (his call; nothing fake has been added to his database). When there are cards: swipe by dragging (right = like, left = pass) and by the ♥ / ✕ buttons; a swiped person never returns; "Check for new people" refreshes; photo, hours and skills show on the card; phone layout and drag feel on a real phone are unchecked by me.
+**Pending tests for Elie** (a feature is only complete when he confirms it). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`.
+Confirmed by Elie on 2026-09-19 (his message, backed by database checks): "Confirm email" is off; he created a second account with email + password and it worked; both accounts finished onboarding (so onboarding works with real accounts); the second account showed up in the first one's feed; he liked it and it disappeared from the feed (1 like recorded).
+Still unconfirmed:
+- Password login: changing his temporary password on `/profile` ("Password" section); wrong password message; logging out and in again with the new password; the "Forgot your password?" email link (needs the email limit to allow it).
+- F3: photo upload from his phone (no photo has been uploaded yet), editing the profile ("Saved."), replacing/removing a photo, phone layout, the redirects between /onboarding, /profile and /feed. I could not take screenshots.
+- F2 leftovers: opening an email login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link.
+- F4: drag-to-swipe on a real phone (right = like, left = pass), the ✕ pass button, "You're all caught up" and "Check for new people", photos and hours on cards, phone layout.
 
 **Ideas file:** `ideas.txt` in the project root is Elie's private scratchpad for future ideas. It is git-ignored (never committed). Read it at the start of each session; move anything worth keeping into the Backlog below, in Elie's words.
 
 **Backlog (post-MVP):**
+- Broader "Haves and Needs" beyond skills (e.g. capital, network, equipment, domain expertise), and industry-specific haves/needs grouped per industry when more categories open. Elie: fine as game-design skills only for now. The categories/skills tables already support per-industry skills; this is about widening what people can offer or seek. (Elie, 2026-09-19)
 - Collaboration type / capital search: whether someone wants paid help (freelance, for cash) or a true partner who works for a share of the venture. The equity partner is the original vision of the app; the paid-help side is an interesting extension. Likely a profile field plus a search filter. (From ideas.txt, 2026-09-19)
 - Custom email (SMTP) for login: removes the 2-emails-per-hour limit, allows a proper branded email template, and fixes the login link only working in the browser that requested it. See DEBT-001. Elie: fine for now, fix later (re-check at F5, which needs two accounts)
 - Email/push notifications on new match (first priority after MVP)
