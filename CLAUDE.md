@@ -244,7 +244,11 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 **Completed features:**
 - F0 — Setup (confirmed by Elie 2026-09-19). Live at https://businessmeet.vercel.app/. GitHub: kysslie/businessmeet. Vercel gotcha: Framework Preset must be Next.js.
 
-**In progress:** F1 — Schema migrations, RLS policies, seed data. Applied to the hosted dev project on 2026-09-19 (3 migrations). `supabase/tests/rls_smoke_test.sql`: 83/83 checks passed; `db advisors`: no issues; no test data left behind. Waiting on: Elie confirming he sees the tables in the Supabase dashboard.
+- F1 — Schema migrations, RLS policies, seed data (confirmed by Elie 2026-09-19). 3 migrations applied to the hosted dev project. `supabase/tests/rls_smoke_test.sql`: 83/83 checks passed; `db advisors`: no issues; no test data left behind.
+
+**In progress:** none. Waiting on Elie's OK to add `@supabase/supabase-js`, `@supabase/ssr`, `zod` and start F2.
+
+Rule for schema changes: all table/column/policy changes go through a new numbered file in `supabase/migrations/`, never through the Supabase dashboard's Table Editor (dashboard edits are not recorded in the repo and new columns would miss the grants). Editing data rows in the dashboard (e.g. flipping `categories.is_active`, adding skills) is fine.
 
 How to work with the database from here (no Docker, no password prompt needed once linked and logged in):
 - Apply migrations: `npx supabase@2.117.0 db push` (preview first with `--dry-run`)
