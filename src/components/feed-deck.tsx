@@ -1,113 +1,13 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { recordSwipe } from "@/app/feed/actions";
-import { countryName } from "@/lib/countries";
-import {
-  AMBITIONS,
-  IDEA_STATUSES,
-  WEEKLY_HOURS,
-  WORK_MODES,
-  labelsFor,
-} from "@/lib/profile-options";
-
-// What one swipe card shows. Built on the server from get_feed() plus a photo link.
-export type FeedCard = {
-  id: string;
-  displayName: string;
-  avatarUrl: string | null;
-  country: string | null;
-  city: string | null;
-  district: string | null;
-  workModes: string[];
-  ideaStatuses: string[];
-  pitch: string | null;
-  weeklyHours: string[];
-  partnerWeeklyHours: string[];
-  ambitions: string[];
-  categories: string[];
-  offers: string[];
-  seeks: string[];
-};
+import { ProfileCard, type FeedCard } from "./profile-card";
 
 // How far (in pixels) a card must be dragged sideways to count as a swipe.
 const SWIPE_DISTANCE = 100;
-
-function Chips({ title, items }: { title: string; items: string[] }) {
-  if (items.length === 0) return null;
-  return (
-    <div>
-      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500">{title}</p>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((item) => (
-          <span
-            key={item}
-            className="rounded-full bg-zinc-100 px-3 py-1 text-sm dark:bg-zinc-800"
-          >
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CardBody({ card }: { card: FeedCard }) {
-  const workModes = labelsFor(WORK_MODES, card.workModes).join(" · ");
-  const place = [card.district, card.city, countryName(card.country)].filter(Boolean).join(", ");
-  const hours = (list: string[]) => `${labelsFor(WEEKLY_HOURS, list).join(", ")} h/week`;
-  return (
-    <>
-      <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-zinc-200 text-6xl text-zinc-400 dark:bg-zinc-800">
-        {card.avatarUrl ? (
-          // Plain <img>: the address is a short-lived signed link, not a fixed image.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={card.avatarUrl}
-            alt={`Photo of ${card.displayName}`}
-            draggable={false}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span aria-hidden="true">🙂</span>
-        )}
-      </div>
-      <div className="flex flex-col gap-4 p-5">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">{card.displayName}</h2>
-          <p className="text-sm text-zinc-500">{workModes}</p>
-          {place && <p className="text-sm text-zinc-500">{place}</p>}
-        </div>
-        <div>
-          <p className="font-medium">{labelsFor(IDEA_STATUSES, card.ideaStatuses).join(" · ")}</p>
-          {card.pitch && (
-            <p className="mt-1 text-zinc-700 dark:text-zinc-300">&ldquo;{card.pitch}&rdquo;</p>
-          )}
-        </div>
-        <dl className="grid grid-cols-1 gap-2 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">Can commit</dt>
-            <dd className="text-right">{hours(card.weeklyHours)}</dd>
-          </div>
-          {card.partnerWeeklyHours.length > 0 && (
-            <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500">Wants a partner at</dt>
-              <dd className="text-right">{hours(card.partnerWeeklyHours)}</dd>
-            </div>
-          )}
-          <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">Ambition</dt>
-            <dd className="text-right">{labelsFor(AMBITIONS, card.ambitions).join(" · ")}</dd>
-          </div>
-        </dl>
-        <Chips title="Into" items={card.categories} />
-        <Chips title="Offers" items={card.offers} />
-        <Chips title="Looking for" items={card.seeks} />
-      </div>
-    </>
-  );
-}
 
 export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
   const router = useRouter();
@@ -115,6 +15,8 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
   const [error, setError] = useState<string | null>(null);
   const [checking, startChecking] = useTransition();
   const [dragX, setDragX] = useState(0);
+  // Set when a like turns into a match: shows the "It's a match!" screen.
+  const [match, setMatch] = useState<{ id: string; name: string; avatarUrl: string | null } | null>(null);
   const dragStart = useRef<number | null>(null);
 
   const card = cards[0];
@@ -128,6 +30,8 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
     if (!result.ok) {
       setCards((current) => [card, ...current]);
       setError(result.message);
+    } else if (result.matchId) {
+      setMatch({ id: result.matchId, name: card.displayName, avatarUrl: card.avatarUrl });
     }
   }
 
@@ -147,8 +51,50 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
     else if (distance < -SWIPE_DISTANCE) void decide("pass");
   }
 
+  // Shown on top of everything when a like becomes a match.
+  const matchScreen = match && (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="It's a match"
+    >
+      <div className="flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl bg-background p-8 text-center">
+        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-zinc-200 text-4xl dark:bg-zinc-800">
+          {match.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={match.avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span aria-hidden="true">🙂</span>
+          )}
+        </div>
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">It&apos;s a match!</h2>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+            You and {match.name} both liked each other.
+          </p>
+        </div>
+        <Link
+          href={`/matches/${match.id}`}
+          className="flex h-12 w-full items-center justify-center rounded-xl bg-foreground px-5 text-base font-medium text-background"
+        >
+          See {match.name}
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMatch(null)}
+          className="h-12 w-full rounded-xl border border-zinc-300 px-5 text-base font-medium dark:border-zinc-700"
+        >
+          Keep swiping
+        </button>
+      </div>
+    </div>
+  );
+
   if (!card) {
     return (
+      <>
+      {matchScreen}
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
         <p className="text-lg font-medium">You&apos;re all caught up</p>
         <p className="text-sm text-zinc-500">
@@ -167,11 +113,13 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
           {checking ? "Checking…" : "Check for new people"}
         </button>
       </div>
+      </>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {matchScreen}
       <div
         key={card.id}
         onPointerDown={onPointerDown}
@@ -186,7 +134,7 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
         className="relative cursor-grab select-none overflow-hidden rounded-2xl border border-zinc-200 bg-background shadow-sm active:cursor-grabbing dark:border-zinc-800"
         data-testid="feed-card"
       >
-        <CardBody card={card} />
+        <ProfileCard card={card} />
         {dragX > 30 && (
           <span className="absolute left-4 top-4 rounded-lg border-2 border-green-600 px-3 py-1 text-lg font-bold text-green-600">
             LIKE

@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FeedDeck, type FeedCard } from "@/components/feed-deck";
+import { FeedDeck } from "@/components/feed-deck";
+import type { FeedCard } from "@/components/profile-card";
+import { signedPhotoLinks } from "@/lib/photo-links";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../auth/actions";
-
-// How long photo links stay valid. They are made fresh on every page load.
-const PHOTO_LINK_SECONDS = 60 * 60;
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -29,16 +28,10 @@ export default async function FeedPage() {
   }
 
   // One batch request for every photo link.
-  const paths = feed.flatMap((person) => (person.avatar_path ? [person.avatar_path] : []));
-  const photoLinks = new Map<string, string>();
-  if (paths.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from("avatars")
-      .createSignedUrls(paths, PHOTO_LINK_SECONDS);
-    for (const item of signed ?? []) {
-      if (item.path && item.signedUrl) photoLinks.set(item.path, item.signedUrl);
-    }
-  }
+  const photoLinks = await signedPhotoLinks(
+    supabase,
+    feed.flatMap((person) => (person.avatar_path ? [person.avatar_path] : [])),
+  );
 
   const cards: FeedCard[] = feed.map((person) => ({
     id: person.id,
@@ -63,6 +56,9 @@ export default async function FeedPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">BusinessMeet</h1>
         <nav className="flex items-center gap-4 text-sm">
+          <Link href="/matches" className="underline">
+            Matches
+          </Link>
           <Link href="/profile" className="underline">
             Profile
           </Link>
