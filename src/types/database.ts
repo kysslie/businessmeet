@@ -397,6 +397,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_feed: {
+        Args: never
+        Returns: {
+          ambition: string
+          avatar_path: string
+          category_names: string[]
+          city: string
+          display_name: string
+          id: string
+          idea_status: string
+          offers: string[]
+          partner_weekly_hours: string
+          pitch: string
+          seeks: string[]
+          weekly_hours: string
+          work_mode: string
+        }[]
+      }
       is_match_partner: { Args: { other_user: string }; Returns: boolean }
     }
     Enums: {

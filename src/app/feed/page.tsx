@@ -1,45 +1,78 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FeedDeck, type FeedCard } from "@/components/feed-deck";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../auth/actions";
 
-// Placeholder. The real swipe feed arrives in F4; for now this proves login and
-// profile setup work.
+// How long photo links stay valid. They are made fresh on every page load.
+const PHOTO_LINK_SECONDS = 60 * 60;
+
 export default async function FeedPage() {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
+  const { data: auth } = await supabase.auth.getClaims();
   // proxy.ts already redirects logged-out visitors; this is a second lock on the door.
-  if (!data?.claims) redirect("/login");
+  if (!auth?.claims) redirect("/login");
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, onboarded")
-    .eq("id", data.claims.sub)
+    .select("onboarded")
+    .eq("id", auth.claims.sub)
     .single();
   // New people finish their profile before anything else.
   if (!profile?.onboarded) redirect("/onboarding");
 
+  // The up-to-20 people this user can swipe on (rules live in the database).
+  const { data: feed, error } = await supabase.rpc("get_feed");
+  if (error) {
+    console.error("get_feed failed:", error.code, error.message);
+    throw new Error("Could not load the feed.");
+  }
+
+  // One batch request for every photo link.
+  const paths = feed.flatMap((person) => (person.avatar_path ? [person.avatar_path] : []));
+  const photoLinks = new Map<string, string>();
+  if (paths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from("avatars")
+      .createSignedUrls(paths, PHOTO_LINK_SECONDS);
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl) photoLinks.set(item.path, item.signedUrl);
+    }
+  }
+
+  const cards: FeedCard[] = feed.map((person) => ({
+    id: person.id,
+    displayName: person.display_name ?? "Someone",
+    avatarUrl: person.avatar_path ? (photoLinks.get(person.avatar_path) ?? null) : null,
+    city: person.city,
+    workMode: person.work_mode ?? "remote_ok",
+    ideaStatus: person.idea_status ?? "exploring",
+    pitch: person.pitch,
+    weeklyHours: person.weekly_hours ?? "lt_5",
+    partnerWeeklyHours: person.partner_weekly_hours,
+    ambition: person.ambition ?? "for_fun",
+    categories: person.category_names,
+    offers: person.offers,
+    seeks: person.seeks,
+  }));
+
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-6 py-16">
-      <h1 className="text-3xl font-semibold tracking-tight">Hi {profile.display_name}</h1>
-      <p className="text-zinc-600 dark:text-zinc-400">
-        You&apos;re logged in as <strong>{data.claims.email}</strong>. The swipe feed arrives in
-        a later step.
-      </p>
-      <Link
-        href="/profile"
-        className="flex h-12 w-full items-center justify-center rounded-xl bg-foreground px-5 text-base font-medium text-background"
-      >
-        Edit profile
-      </Link>
-      <form action={signOut}>
-        <button
-          type="submit"
-          className="h-12 w-full rounded-xl border border-zinc-300 px-5 text-base font-medium dark:border-zinc-700"
-        >
-          Log out
-        </button>
-      </form>
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-6">
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold tracking-tight">BusinessMeet</h1>
+        <nav className="flex items-center gap-4 text-sm">
+          <Link href="/profile" className="underline">
+            Profile
+          </Link>
+          <form action={signOut}>
+            <button type="submit" className="underline">
+              Log out
+            </button>
+          </form>
+        </nav>
+      </header>
+      {/* The key makes the deck start fresh whenever a new batch of people arrives. */}
+      <FeedDeck key={cards.map((card) => card.id).join(",")} initialCards={cards} />
     </main>
   );
 }

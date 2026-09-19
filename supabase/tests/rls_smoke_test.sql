@@ -17,6 +17,14 @@ declare
   alice constant uuid := '00000000-0000-0000-0000-0000000000a1';
   bob   constant uuid := '00000000-0000-0000-0000-0000000000b2';
   carol constant uuid := '00000000-0000-0000-0000-0000000000c3';
+  dave  constant uuid := '00000000-0000-0000-0000-0000000000d4';
+  erin  constant uuid := '00000000-0000-0000-0000-0000000000e5';
+  frank constant uuid := '00000000-0000-0000-0000-0000000000f6';
+  gina  constant uuid := '00000000-0000-0000-0000-0000000000a7';
+  hank  constant uuid := '00000000-0000-0000-0000-0000000000b8';
+  people jsonb := jsonb_build_object('alice', alice, 'bob', bob, 'carol', carol, 'dave', dave,
+    'erin', erin, 'frank', frank, 'gina', gina, 'hank', hank);
+  who_key text;
   the_match constant uuid := '11111111-1111-1111-1111-111111111111';
   tests jsonb := $j$[
     {"n":"setup: create 3 fake users","as":"admin","sql":"insert into auth.users (id, aud, role, email) values ('{alice}','authenticated','authenticated','alice@test.invalid'), ('{bob}','authenticated','authenticated','bob@test.invalid'), ('{carol}','authenticated','authenticated','carol@test.invalid')","expect":"rows=3"},
@@ -115,6 +123,36 @@ declare
     {"n":"other tables: logged-out visitor is refused on messages","as":"anon","sql":"select 1 from public.messages","expect":"error=permission denied"},
     {"n":"other tables: logged-out visitor is refused on matches","as":"anon","sql":"select 1 from public.matches","expect":"error=permission denied"},
 
+    {"n":"feed setup: create dave, erin, frank, gina, hank","as":"admin","sql":"insert into auth.users (id, aud, role, email) values ('{dave}','authenticated','authenticated','dave@test.invalid'), ('{erin}','authenticated','authenticated','erin@test.invalid'), ('{frank}','authenticated','authenticated','frank@test.invalid'), ('{gina}','authenticated','authenticated','gina@test.invalid'), ('{hank}','authenticated','authenticated','hank@test.invalid')","expect":"rows=5"},
+    {"n":"feed setup: dave = local-only in ' LYON ', erin = remote in 'lyon', frank = local-only in Paris, gina = remote, hank = not onboarded","as":"admin","sql":"update public.profiles p set display_name=v.n, work_mode=v.wm, city=v.city, idea_status='exploring', weekly_hours='5_10', ambition='for_fun', onboarded=v.onb from (values ('{dave}'::uuid,'Dave','local_only',' LYON ',true), ('{erin}'::uuid,'Erin','remote_ok','lyon',true), ('{frank}'::uuid,'Frank','local_only','Paris',true), ('{gina}'::uuid,'Gina','remote_ok',null,true), ('{hank}'::uuid,'Hank','remote_ok',null,false)) as v(id,n,wm,city,onb) where p.id=v.id","expect":"rows=5"},
+    {"n":"feed setup: everyone picks video games, except gina who only has an inactive category","as":"admin","sql":"insert into public.profile_categories (profile_id, category_id) select v.id, c.id from (values ('{dave}'::uuid,'video_games'), ('{erin}'::uuid,'video_games'), ('{frank}'::uuid,'video_games'), ('{gina}'::uuid,'local_services'), ('{hank}'::uuid,'video_games')) as v(id,slug) join public.categories c on c.slug=v.slug","expect":"rows=5"},
+    {"n":"feed setup: erin offers game programming","as":"admin","sql":"insert into public.profile_skills (profile_id, skill_id, kind) select '{erin}', id, 'offers' from public.skills where slug='game_programming'","expect":"rows=1"},
+
+    {"n":"feed: a local-only user sees only people in the same city (case and spaces ignored)","as":"dave","sql":"select 1 from public.get_feed()","expect":"rows=1"},
+    {"n":"feed: ...and that person is erin","as":"dave","sql":"select 1 from public.get_feed() where id='{erin}'","expect":"rows=1"},
+    {"n":"feed: a local-only user with nobody in their city sees nobody","as":"frank","sql":"select 1 from public.get_feed()","expect":"rows=0"},
+    {"n":"feed: a remote user sees everyone onboarded who shares an active category (alice, bob, dave, frank)","as":"erin","sql":"select 1 from public.get_feed()","expect":"rows=4"},
+    {"n":"feed: no shared ACTIVE category means an empty feed","as":"gina","sql":"select 1 from public.get_feed()","expect":"rows=0"},
+    {"n":"feed: someone who has not finished onboarding gets an empty feed","as":"hank","sql":"select 1 from public.get_feed()","expect":"rows=0"},
+    {"n":"feed: carol (not onboarded) gets an empty feed","as":"carol","sql":"select 1 from public.get_feed()","expect":"rows=0"},
+    {"n":"feed: alice sees dave, erin, frank (not bob, already swiped)","as":"alice","sql":"select 1 from public.get_feed()","expect":"rows=3"},
+    {"n":"feed: never includes yourself","as":"alice","sql":"select 1 from public.get_feed() where id='{alice}'","expect":"rows=0"},
+    {"n":"feed: never includes someone you already swiped","as":"alice","sql":"select 1 from public.get_feed() where id='{bob}'","expect":"rows=0"},
+    {"n":"feed: never includes someone who is not onboarded","as":"alice","sql":"select 1 from public.get_feed() where id in ('{hank}','{carol}')","expect":"rows=0"},
+    {"n":"feed: never includes someone with no shared active category","as":"alice","sql":"select 1 from public.get_feed() where id='{gina}'","expect":"rows=0"},
+    {"n":"feed: a card carries name, categories and skills","as":"alice","sql":"select 1 from public.get_feed() where id='{erin}' and display_name='Erin' and category_names=array['Video games'] and offers=array['Game programming'] and seeks='{}'","expect":"rows=1"},
+    {"n":"feed: erin passes on dave","as":"erin","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{erin}','{dave}','pass')","expect":"rows=1"},
+    {"n":"feed: ...and dave disappears from her feed","as":"erin","sql":"select 1 from public.get_feed()","expect":"rows=3"},
+    {"n":"feed: erin blocks alice","as":"erin","sql":"insert into public.blocks (blocker_id, blocked_id) values ('{erin}','{alice}')","expect":"rows=1"},
+    {"n":"feed: the blocker no longer sees the blocked person","as":"erin","sql":"select 1 from public.get_feed()","expect":"rows=2"},
+    {"n":"feed: the blocked person no longer sees the blocker either","as":"alice","sql":"select 1 from public.get_feed() where id='{erin}'","expect":"rows=0"},
+    {"n":"feed: cannot ask for another person's feed (no user id parameter)","as":"alice","sql":"select 1 from public.get_feed('{bob}')","expect":"error=does not exist"},
+    {"n":"feed: logged-out visitor cannot call it","as":"anon","sql":"select 1 from public.get_feed()","expect":"error=permission denied"},
+    {"n":"feed setup: 25 more onboarded remote users who play video games","as":"admin","sql":"insert into auth.users (id, aud, role, email) select gen_random_uuid(), 'authenticated', 'authenticated', 'bulk' || g || '@test.invalid' from generate_series(1,25) g","expect":"rows=25"},
+    {"n":"feed setup: complete the 25 profiles","as":"admin","sql":"update public.profiles set display_name='Bulk', work_mode='remote_ok', idea_status='exploring', weekly_hours='5_10', ambition='for_fun', onboarded=true where id in (select id from auth.users where email like 'bulk%@test.invalid')","expect":"rows=25"},
+    {"n":"feed setup: give them the video games category","as":"admin","sql":"insert into public.profile_categories (profile_id, category_id) select u.id, c.id from auth.users u cross join public.categories c where u.email like 'bulk%@test.invalid' and c.slug='video_games'","expect":"rows=25"},
+    {"n":"feed: never more than 20 cards at once","as":"erin","sql":"select 1 from public.get_feed()","expect":"rows=20"},
+
     {"n":"account deletion: deleting alice's auth user works","as":"admin","sql":"delete from auth.users where id='{alice}'","expect":"rows=1"},
     {"n":"account deletion: her profile is gone","as":"admin","sql":"select 1 from public.profiles where id='{alice}'","expect":"rows=0"},
     {"n":"account deletion: her swipes are gone","as":"admin","sql":"select 1 from public.swipes where '{alice}' in (swiper_id, target_id)","expect":"rows=0"},
@@ -138,8 +176,10 @@ begin
   for t in select * from jsonb_array_elements(tests) loop
     who := t->>'as';
     expect := t->>'expect';
-    stmt := replace(replace(replace(replace(t->>'sql',
-      '{alice}', alice::text), '{bob}', bob::text), '{carol}', carol::text), '{match}', the_match::text);
+    stmt := replace(t->>'sql', '{match}', the_match::text);
+    for who_key in select jsonb_object_keys(people) loop
+      stmt := replace(stmt, '{' || who_key || '}', people->>who_key);
+    end loop;
     err := null;
     n := null;
 
@@ -150,7 +190,7 @@ begin
         set local role anon;
       elsif who <> 'admin' then
         perform set_config('request.jwt.claims', json_build_object(
-          'sub', case who when 'alice' then alice when 'bob' then bob when 'carol' then carol end,
+          'sub', people->>who,
           'role', 'authenticated')::text, true);
         set local role authenticated;
       end if;

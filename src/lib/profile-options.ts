@@ -26,6 +26,14 @@ export const AMBITIONS = [
   { value: "full_time", label: "Aim to go full-time" },
 ] as const;
 
+// The label people see for a stored value (or the value itself if it is unknown).
+export function labelFor(
+  options: readonly { value: string; label: string }[],
+  value: string | null,
+) {
+  return options.find((option) => option.value === value)?.label ?? value ?? "";
+}
+
 export const PITCH_MAX_LENGTH = 280;
 export const DISPLAY_NAME_MAX_LENGTH = 50;
 export const CITY_MAX_LENGTH = 100;
