@@ -239,11 +239,12 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 **Current milestone:** MVP
 
-**Completed features:** none
+**Completed features:**
+- F0 — Setup (confirmed by Elie 2026-09-19). Live at https://businessmeet.vercel.app/. GitHub: kysslie/businessmeet. Vercel gotcha: Framework Preset must be Next.js.
 
-**In progress:** F0 — Setup. Done: Node/Git checked, Next.js scaffolded, landing page, lint/type-check/build pass, Git repo created. GitHub repo created (kysslie/businessmeet), Supabase dev project created, `.env.local` checked (URL + publishable key verified live). Code pushed to GitHub. Vercel was showing 404 because Framework Preset was not Next.js; Elie switched it and redeployed, and https://businessmeet.vercel.app/ now returns the landing page (verified 2026-09-19). Waiting on: Elie's confirmation that he sees it.
+**In progress:** F1 — Schema migrations, RLS policies, seed data. Approved by Elie 2026-09-19. Supabase CLI runs via `npx supabase@2.117.0` (not added to package.json).
 
-**Next planned step:** F0 — finish accounts and first deploy
+**Next planned step:** F1 — write migrations, link to the dev project, push, test RLS
 
 **Backlog (post-MVP):**
 - Email/push notifications on new match (first priority after MVP)
