@@ -247,7 +247,9 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 - F1 — Schema migrations, RLS policies, seed data (confirmed by Elie 2026-09-19). 3 migrations applied to the hosted dev project. `supabase/tests/rls_smoke_test.sql`: 83/83 checks passed; `db advisors`: no issues; no test data left behind.
 
-**In progress:** F2 — Magic-link login, logout, route protection. Elie approved the 3 packages 2026-09-19. Supabase Site URL and Redirect URLs set by Elie. First real-email test (2026-09-19) failed: the standard link returns `?code=` and the first version only understood `token_hash`. Account and profile row were created correctly (sign-up trigger verified live). Fixed by handling `code` in `auth/callback/route.ts`; lint, type-check, build and failure paths pass locally. Waiting on: Elie's second real-email test (email limit: 2/hour).
+- F2 — Magic-link login, logout, route protection (confirmed by Elie 2026-09-19: login works, session survives refresh, logout works, logged-out `/feed` redirects to `/login`). Packages added: `@supabase/supabase-js`, `@supabase/ssr`, `zod`. First real-email test failed (standard link returns `?code=`, first version only understood `token_hash`); fixed in `auth/callback/route.ts`. Elie decided to live with the standard email for now (DEBT-001).
+
+**In progress:** none. F3 plan to be presented to Elie (it adds a storage bucket, so it needs his OK).
 
 Rule for schema changes: all table/column/policy changes go through a new numbered file in `supabase/migrations/`, never through the Supabase dashboard's Table Editor (dashboard edits are not recorded in the repo and new columns would miss the grants). Editing data rows in the dashboard (e.g. flipping `categories.is_active`, adding skills) is fine.
 
@@ -257,9 +259,10 @@ How to work with the database from here (no Docker, no password prompt needed on
 - Automatic security check: `npx supabase@2.117.0 db advisors --linked`
 - Every new migration must also revoke default grants and grant only what is needed, then enable RLS (see migration 2).
 
-**Next planned step:** F2 — end-to-end login test with a real email, then F3 (onboarding and profile)
+**Next planned step:** F3 — Onboarding and profile edit, including photo upload
 
 **Backlog (post-MVP):**
+- Custom email (SMTP) for login: removes the 2-emails-per-hour limit, allows a proper branded email template, and fixes the login link only working in the browser that requested it. See DEBT-001. Elie: fine for now, fix later (re-check at F5, which needs two accounts)
 - Email/push notifications on new match (first priority after MVP)
 - Easier discovery beyond swipe-style matching (browse/search profiles; revisit the strict profile-visibility rule). Elie: "we are not strictly a dating app"
 - Compatibility-ranked feed (can use `weekly_hours` vs `partner_weekly_hours`)
