@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BusinessMeet",
   description:
-    "Find the people to build your next project with. Match on shared interests, skills, and commitment.",
+    "Find the right person to start your first small business with. Match on shared interests, skills and the time you can give.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

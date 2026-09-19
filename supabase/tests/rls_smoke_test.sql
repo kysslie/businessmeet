@@ -11,7 +11,6 @@
 -- The script ALWAYS finishes by raising an error on purpose. That undoes everything
 -- it did, so no test data is left behind. The error text is the report:
 -- one PASS/FAIL line per check. Read the report, not the "error" itself.
-
 do $test$
 declare
   alice constant uuid := '00000000-0000-0000-0000-0000000000a1';
@@ -33,7 +32,6 @@ declare
     {"n":"setup: create 3 fake users","as":"admin","sql":"insert into auth.users (id, aud, role, email) values ('{alice}','authenticated','authenticated','alice@test.invalid'), ('{bob}','authenticated','authenticated','bob@test.invalid'), ('{carol}','authenticated','authenticated','carol@test.invalid')","expect":"rows=3"},
     {"n":"isolation: real people are hidden from the feed for the duration of this test (rolled back at the end)","as":"admin","sql":"with hidden as (update public.profiles set onboarded = false where id not in ('{alice}','{bob}','{carol}') returning 1) select 1 where false","expect":"rows=0"},
     {"n":"sign-up trigger creates an empty profile for each user","as":"admin","sql":"select 1 from public.profiles where id in ('{alice}','{bob}','{carol}') and onboarded = false","expect":"rows=3"},
-
     {"n":"profiles: alice completes her own profile (remote, France)","as":"alice","sql":"update public.profiles set display_name='Alice', work_modes=array['remote'], country='FR', idea_statuses=array['exploring'], weekly_hours=array['5_10'], ambitions=array['for_fun'], onboarded=true where id='{alice}'","expect":"rows=1"},
     {"n":"profiles: bob completes his own profile with several answers per question (remote, Lebanon)","as":"bob","sql":"update public.profiles set display_name='Bob', work_modes=array['remote'], country='LB', idea_statuses=array['wants_to_join','open_to_merge'], weekly_hours=array['10_20','20_plus'], ambitions=array['side_income','full_time'], onboarded=true where id='{bob}'","expect":"rows=1"},
     {"n":"profiles: alice cannot edit bob's profile","as":"alice","sql":"update public.profiles set display_name='Hacked' where id='{bob}'","expect":"rows=0"},
@@ -60,23 +58,22 @@ declare
     {"n":"profiles: logged-out visitor is refused","as":"anon","sql":"select id from public.profiles","expect":"error=permission denied"},
     {"n":"profiles: users cannot insert profiles","as":"alice","sql":"insert into public.profiles (id) values (gen_random_uuid())","expect":"error=permission denied"},
     {"n":"profiles: users cannot delete profiles","as":"alice","sql":"delete from public.profiles where id='{alice}'","expect":"error=permission denied"},
-
     {"n":"categories: logged-in user sees all 7","as":"alice","sql":"select id from public.categories","expect":"rows=7"},
-    {"n":"categories: exactly one is active (video games)","as":"alice","sql":"select id from public.categories where is_active and slug='video_games'","expect":"rows=1"},
-    {"n":"skills: logged-in user sees all 14 seeded skills","as":"alice","sql":"select id from public.skills","expect":"rows=14"},
+    {"n":"categories: all seven seeded categories are open","as":"alice","sql":"select id from public.categories where is_active","expect":"rows=7"},
+    {"n":"skills: logged-in user sees all 60 seeded skills (9 universal + 51 in categories)","as":"alice","sql":"select id from public.skills","expect":"rows=60"},
     {"n":"categories: logged-out visitor is refused","as":"anon","sql":"select id from public.categories","expect":"error=permission denied"},
     {"n":"categories: users cannot add categories","as":"alice","sql":"insert into public.categories (slug, name) values ('x','x')","expect":"error=permission denied"},
     {"n":"skills: users cannot change skills","as":"alice","sql":"update public.skills set is_active=false","expect":"error=permission denied"},
-
+    {"n":"setup: add an inactive category for the negative tests","as":"admin","sql":"insert into public.categories (slug, name, is_active, sort_order) values ('test_inactive','Test inactive category', false, 99)","expect":"rows=1"},
+    {"n":"skills: every seeded category except Other has skills of its own","as":"admin","sql":"select c.id from public.categories c where c.slug not in ('other','test_inactive') and not exists (select 1 from public.skills s where s.category_id = c.id)","expect":"rows=0"},
     {"n":"profile_categories: alice picks the active category","as":"alice","sql":"insert into public.profile_categories (profile_id, category_id) select '{alice}', id from public.categories where slug='video_games'","expect":"rows=1"},
-    {"n":"profile_categories: cannot pick an inactive category","as":"alice","sql":"insert into public.profile_categories (profile_id, category_id) select '{alice}', id from public.categories where slug='local_services'","expect":"error=row-level security"},
+    {"n":"profile_categories: cannot pick an inactive category","as":"alice","sql":"insert into public.profile_categories (profile_id, category_id) select '{alice}', id from public.categories where slug='test_inactive'","expect":"error=row-level security"},
     {"n":"profile_categories: cannot add to someone else's profile","as":"alice","sql":"insert into public.profile_categories (profile_id, category_id) select '{bob}', id from public.categories where slug='video_games'","expect":"error=row-level security"},
     {"n":"profile_categories: bob picks the active category","as":"bob","sql":"insert into public.profile_categories (profile_id, category_id) select '{bob}', id from public.categories where slug='video_games'","expect":"rows=1"},
     {"n":"profile_skills: alice offers game programming","as":"alice","sql":"insert into public.profile_skills (profile_id, skill_id, kind) select '{alice}', id, 'offers' from public.skills where slug='game_programming'","expect":"rows=1"},
     {"n":"profile_skills: invalid kind is rejected","as":"alice","sql":"insert into public.profile_skills (profile_id, skill_id, kind) select '{alice}', id, 'wrong' from public.skills where slug='art_2d'","expect":"error=check constraint"},
     {"n":"setup: add an inactive skill","as":"admin","sql":"insert into public.skills (slug, name, is_active) values ('test_inactive','Inactive test skill',false)","expect":"rows=1"},
     {"n":"profile_skills: cannot pick an inactive skill","as":"alice","sql":"insert into public.profile_skills (profile_id, skill_id, kind) select '{alice}', id, 'seeks' from public.skills where slug='test_inactive'","expect":"error=row-level security"},
-
     {"n":"avatars: bucket is private, 2 MB, jpeg/png/webp only","as":"admin","sql":"select 1 from storage.buckets where id='avatars' and not public and file_size_limit=2097152 and allowed_mime_types=array['image/jpeg','image/png','image/webp']","expect":"rows=1"},
     {"n":"avatars: the three storage rules exist","as":"admin","sql":"select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'avatars:%'","expect":"rows=3"},
     {"n":"avatars: alice uploads into her own folder","as":"alice","sql":"insert into storage.objects (bucket_id, name) values ('avatars','{alice}/photo1.jpg')","expect":"rows=1"},
@@ -88,7 +85,6 @@ declare
     {"n":"profiles: avatar_path inside own folder is accepted","as":"alice","sql":"update public.profiles set avatar_path='{alice}/photo1.jpg' where id='{alice}'","expect":"rows=1"},
     {"n":"profiles: avatar_path pointing into someone else's folder is rejected","as":"alice","sql":"update public.profiles set avatar_path='{bob}/photo1.jpg' where id='{alice}'","expect":"error=profiles_avatar_path_own_folder"},
     {"n":"profiles: avatar_path can be cleared","as":"alice","sql":"update public.profiles set avatar_path=null where id='{alice}'","expect":"rows=1"},
-
     {"n":"swipes: alice likes bob","as":"alice","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{alice}','{bob}','like')","expect":"rows=1"},
     {"n":"swipes: cannot swipe as someone else","as":"alice","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{bob}','{alice}','like')","expect":"error=row-level security"},
     {"n":"swipes: cannot swipe on yourself","as":"alice","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{alice}','{alice}','like')","expect":"error=swipes_not_self"},
@@ -97,7 +93,6 @@ declare
     {"n":"swipes: alice sees her own swipe","as":"alice","sql":"select 1 from public.swipes","expect":"rows=1"},
     {"n":"swipes: swipes cannot be edited","as":"alice","sql":"update public.swipes set direction='pass' where swiper_id='{alice}'","expect":"error=permission denied"},
     {"n":"swipes: swipes cannot be deleted","as":"alice","sql":"delete from public.swipes where swiper_id='{alice}'","expect":"error=permission denied"},
-
     {"n":"matches: pair stored in the wrong order is rejected","as":"admin","sql":"insert into public.matches (id, user_a, user_b) values ('{match}','{bob}','{alice}')","expect":"error=matches_ordered"},
     {"n":"matches: (setup) alice+bob match","as":"admin","sql":"insert into public.matches (id, user_a, user_b) values ('{match}','{alice}','{bob}')","expect":"rows=1"},
     {"n":"matches: the same pair cannot match twice","as":"admin","sql":"insert into public.matches (user_a, user_b) values ('{alice}','{bob}')","expect":"error=matches_pair_unique"},
@@ -111,7 +106,6 @@ declare
     {"n":"profile_categories: alice can read her match's categories","as":"alice","sql":"select 1 from public.profile_categories where profile_id='{bob}'","expect":"rows=1"},
     {"n":"profile_categories: carol cannot read bob's","as":"carol","sql":"select 1 from public.profile_categories where profile_id='{bob}'","expect":"rows=0"},
     {"n":"profile_skills: carol cannot read alice's","as":"carol","sql":"select 1 from public.profile_skills where profile_id='{alice}'","expect":"rows=0"},
-
     {"n":"messages: alice sends a message in her match","as":"alice","sql":"insert into public.messages (match_id, sender_id, body) values ('{match}','{alice}','hi bob')","expect":"rows=1"},
     {"n":"messages: bob can read it","as":"bob","sql":"select 1 from public.messages","expect":"rows=1"},
     {"n":"messages: carol cannot read it","as":"carol","sql":"select 1 from public.messages","expect":"rows=0"},
@@ -122,7 +116,6 @@ declare
     {"n":"messages: message of exactly 2000 characters is accepted","as":"alice","sql":"insert into public.messages (match_id, sender_id, body) values ('{match}','{alice}',repeat('x',2000))","expect":"rows=1"},
     {"n":"messages: messages cannot be edited","as":"alice","sql":"update public.messages set body='edited'","expect":"error=permission denied"},
     {"n":"messages: messages cannot be deleted","as":"alice","sql":"delete from public.messages","expect":"error=permission denied"},
-
     {"n":"blocks: alice blocks bob","as":"alice","sql":"insert into public.blocks (blocker_id, blocked_id) values ('{alice}','{bob}')","expect":"rows=1"},
     {"n":"blocks: bob cannot see that he was blocked","as":"bob","sql":"select 1 from public.blocks","expect":"rows=0"},
     {"n":"blocks: cannot block on someone else's behalf","as":"alice","sql":"insert into public.blocks (blocker_id, blocked_id) values ('{bob}','{carol}')","expect":"error=row-level security"},
@@ -132,16 +125,13 @@ declare
     {"n":"reports: users cannot read reports","as":"alice","sql":"select 1 from public.reports","expect":"error=permission denied"},
     {"n":"reports: cannot file a report as someone else","as":"bob","sql":"insert into public.reports (reporter_id, reported_id, reason) values ('{alice}','{carol}','spam')","expect":"error=row-level security"},
     {"n":"reports: logged-out visitor is refused","as":"anon","sql":"insert into public.reports (reporter_id, reported_id, reason) values ('{alice}','{bob}','spam')","expect":"error=permission denied"},
-
     {"n":"other tables: logged-out visitor is refused on swipes","as":"anon","sql":"select 1 from public.swipes","expect":"error=permission denied"},
     {"n":"other tables: logged-out visitor is refused on messages","as":"anon","sql":"select 1 from public.messages","expect":"error=permission denied"},
     {"n":"other tables: logged-out visitor is refused on matches","as":"anon","sql":"select 1 from public.matches","expect":"error=permission denied"},
-
     {"n":"feed setup: create dave, erin, frank, gina, hank, ivan, judy, kim","as":"admin","sql":"insert into auth.users (id, aud, role, email) values ('{dave}','authenticated','authenticated','dave@test.invalid'), ('{erin}','authenticated','authenticated','erin@test.invalid'), ('{frank}','authenticated','authenticated','frank@test.invalid'), ('{gina}','authenticated','authenticated','gina@test.invalid'), ('{hank}','authenticated','authenticated','hank@test.invalid'), ('{ivan}','authenticated','authenticated','ivan@test.invalid'), ('{judy}','authenticated','authenticated','judy@test.invalid'), ('{kim}','authenticated','authenticated','kim@test.invalid')","expect":"rows=8"},
     {"n":"feed setup: dave = Local in ' LYON ' (FR), erin = Remote + Local in 'lyon' (FR), frank = Local in Paris (FR), gina = Remote, hank = not onboarded, ivan = Local in 'Lyon' (CH), judy = Local in 'Zürich' (CH), kim = Local in '  ZURICH ' (CH)","as":"admin","sql":"update public.profiles p set display_name=v.n, work_modes=v.wm, country=v.co, city=v.city, idea_statuses=array['exploring'], weekly_hours=array['5_10'], ambitions=array['for_fun'], onboarded=v.onb from (values ('{dave}'::uuid,'Dave',array['local'],'FR',' LYON ',true), ('{erin}'::uuid,'Erin',array['remote','local'],'FR','lyon',true), ('{frank}'::uuid,'Frank',array['local'],'FR','Paris',true), ('{gina}'::uuid,'Gina',array['remote'],'FR',null,true), ('{hank}'::uuid,'Hank',array['remote'],'FR',null,false), ('{ivan}'::uuid,'Ivan',array['local'],'CH','Lyon',true), ('{judy}'::uuid,'Judy',array['local'],'CH','Zürich',true), ('{kim}'::uuid,'Kim',array['local'],'CH','  ZURICH ',true)) as v(id,n,wm,co,city,onb) where p.id=v.id","expect":"rows=8"},
-    {"n":"feed setup: everyone picks video games, except gina who only has an inactive category","as":"admin","sql":"insert into public.profile_categories (profile_id, category_id) select v.id, c.id from (values ('{dave}'::uuid,'video_games'), ('{erin}'::uuid,'video_games'), ('{frank}'::uuid,'video_games'), ('{gina}'::uuid,'local_services'), ('{hank}'::uuid,'video_games'), ('{ivan}'::uuid,'video_games'), ('{judy}'::uuid,'video_games'), ('{kim}'::uuid,'video_games')) as v(id,slug) join public.categories c on c.slug=v.slug","expect":"rows=8"},
+    {"n":"feed setup: everyone picks video games, except gina who only has an inactive category","as":"admin","sql":"insert into public.profile_categories (profile_id, category_id) select v.id, c.id from (values ('{dave}'::uuid,'video_games'), ('{erin}'::uuid,'video_games'), ('{frank}'::uuid,'video_games'), ('{gina}'::uuid,'test_inactive'), ('{hank}'::uuid,'video_games'), ('{ivan}'::uuid,'video_games'), ('{judy}'::uuid,'video_games'), ('{kim}'::uuid,'video_games')) as v(id,slug) join public.categories c on c.slug=v.slug","expect":"rows=8"},
     {"n":"feed setup: erin offers game programming","as":"admin","sql":"insert into public.profile_skills (profile_id, skill_id, kind) select '{erin}', id, 'offers' from public.skills where slug='game_programming'","expect":"rows=1"},
-
     {"n":"feed: a Local-only user sees only Local people in the same place (case and spaces ignored)","as":"dave","sql":"select 1 from public.get_feed()","expect":"rows=1"},
     {"n":"feed: ...and that person is erin","as":"dave","sql":"select 1 from public.get_feed() where id='{erin}'","expect":"rows=1"},
     {"n":"feed: a Local-only user with nobody in their place sees nobody","as":"frank","sql":"select 1 from public.get_feed()","expect":"rows=0"},
@@ -179,7 +169,6 @@ declare
     {"n":"feed setup: complete the 25 profiles (remote, France)","as":"admin","sql":"update public.profiles set display_name='Bulk', work_modes=array['remote'], country='FR', idea_statuses=array['exploring'], weekly_hours=array['5_10'], ambitions=array['for_fun'], onboarded=true where id in (select id from auth.users where email like 'bulk%@test.invalid')","expect":"rows=25"},
     {"n":"feed setup: give them the video games category","as":"admin","sql":"insert into public.profile_categories (profile_id, category_id) select u.id, c.id from auth.users u cross join public.categories c where u.email like 'bulk%@test.invalid' and c.slug='video_games'","expect":"rows=25"},
     {"n":"feed: never more than 20 cards at once","as":"erin","sql":"select 1 from public.get_feed()","expect":"rows=20"},
-
     {"n":"match: frank likes kim (one-sided) and no match exists yet","as":"frank","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{frank}','{kim}','like')","expect":"rows=1"},
     {"n":"match: ...still no match after one like","as":"admin","sql":"select 1 from public.matches where '{frank}' in (user_a, user_b) and '{kim}' in (user_a, user_b)","expect":"rows=0"},
     {"n":"match: kim likes frank back and the match appears, stored in order (kim before frank)","as":"kim","sql":"insert into public.swipes (swiper_id, target_id, direction) values ('{kim}','{frank}','like')","expect":"rows=1"},
@@ -229,7 +218,6 @@ begin
     end loop;
     err := null;
     n := null;
-
     begin
       reset role;
       if who = 'anon' then
@@ -241,20 +229,17 @@ begin
           'role', 'authenticated')::text, true);
         set local role authenticated;
       end if;
-
       execute stmt;
       get diagnostics n = row_count;
     exception when others then
       err := sqlerrm;
     end;
     reset role;
-
     if expect like 'rows=%' then
       ok := err is null and n = substr(expect, 6)::integer;
     else
       ok := err is not null and err ilike '%' || substr(expect, 7) || '%';
     end if;
-
     if ok then
       passed := passed + 1;
       report := report || E'\nPASS  ' || (t->>'n');
@@ -265,7 +250,6 @@ begin
         || E'\n        got:      ' || coalesce('error: ' || err, 'rows=' || n::text);
     end if;
   end loop;
-
   raise exception E'\n===== RLS SMOKE TEST: % passed, % failed (everything was rolled back) =====\n%',
     passed, failed, report;
 end;

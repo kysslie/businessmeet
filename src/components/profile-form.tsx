@@ -80,6 +80,43 @@ function Choice({
   );
 }
 
+type SkillGroup = { title: string; skills: { id: number; name: string }[] };
+
+// Skill pills grouped under headings ("For any business", then one group per chosen category).
+function SkillPicker({
+  name,
+  groups,
+  selected,
+  onToggle,
+}: {
+  name: string;
+  groups: SkillGroup[];
+  selected: number[];
+  onToggle: (id: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {groups.map((group) => (
+        <div key={group.title} className="flex flex-col gap-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{group.title}</p>
+          <div className="flex flex-wrap gap-2">
+            {group.skills.map((skill) => (
+              <Choice
+                key={skill.id}
+                name={name}
+                value={skill.id}
+                label={skill.name}
+                checked={selected.includes(skill.id)}
+                onChange={() => onToggle(skill.id)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function toggle<T>(list: T[], item: T) {
   return list.includes(item) ? list.filter((existing) => existing !== item) : [...list, item];
 }
@@ -144,6 +181,15 @@ export function ProfileForm({
     (skill) => skill.category_id === null || categoryIds.includes(skill.category_id),
   );
   const visibleIds = new Set(visibleSkills.map((skill) => skill.id));
+  const skillGroups: SkillGroup[] = [
+    { title: "For any business", skills: visibleSkills.filter((skill) => skill.category_id === null) },
+    ...categories
+      .filter((category) => categoryIds.includes(category.id))
+      .map((category) => ({
+        title: category.name,
+        skills: visibleSkills.filter((skill) => skill.category_id === category.id),
+      })),
+  ].filter((group) => group.skills.length > 0);
   const onlyOneCategory = categories.length === 1;
   const wantsLocal = workModes.includes("local");
 
@@ -167,7 +213,11 @@ export function ProfileForm({
         // Only one category is open, so it is chosen for everyone and the picker is hidden.
         <input type="hidden" name="category_ids" value={categories[0].id} />
       ) : (
-        <Section legend="What do you want to build?" error={errors.category_ids}>
+        <Section
+          legend="What kind of business or project?"
+          hint="Pick all that fit. The skills below follow your choice."
+          error={errors.category_ids}
+        >
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
               <Choice
@@ -185,7 +235,7 @@ export function ProfileForm({
 
       <Section
         legend="How can you work together?"
-        hint="Pick both to reach the most people."
+        hint="Pick both to reach the most people. Remote helpers are welcome: if you run a local business, tick Remote too to meet people who can help from anywhere."
         error={errors.work_modes}
       >
         <ChoiceGroup name="work_modes" options={WORK_MODES} selected={workModes} onChange={setWorkModes} />
@@ -303,34 +353,26 @@ export function ProfileForm({
         <ChoiceGroup name="ambitions" options={AMBITIONS} selected={ambitions} onChange={setAmbitions} />
       </Section>
 
-      <Section legend="Skills you offer" hint="Pick at least one." error={errors.offers}>
-        <div className="flex flex-wrap gap-2">
-          {visibleSkills.map((skill) => (
-            <Choice
-              key={skill.id}
-              name="offers"
-              value={skill.id}
-              label={skill.name}
-              checked={offers.includes(skill.id) && visibleIds.has(skill.id)}
-              onChange={() => setOffers((ids) => toggle(ids, skill.id))}
-            />
-          ))}
-        </div>
+      <Section
+        legend="Skills you offer"
+        hint="Pick at least one. The skills shown follow the categories you chose above."
+        error={errors.offers}
+      >
+        <SkillPicker
+          name="offers"
+          groups={skillGroups}
+          selected={offers.filter((id) => visibleIds.has(id))}
+          onToggle={(id) => setOffers((ids) => toggle(ids, id))}
+        />
       </Section>
 
       <Section legend="Skills you're looking for" hint="Optional." error={errors.seeks}>
-        <div className="flex flex-wrap gap-2">
-          {visibleSkills.map((skill) => (
-            <Choice
-              key={skill.id}
-              name="seeks"
-              value={skill.id}
-              label={skill.name}
-              checked={seeks.includes(skill.id) && visibleIds.has(skill.id)}
-              onChange={() => setSeeks((ids) => toggle(ids, skill.id))}
-            />
-          ))}
-        </div>
+        <SkillPicker
+          name="seeks"
+          groups={skillGroups}
+          selected={seeks.filter((id) => visibleIds.has(id))}
+          onToggle={(id) => setSeeks((ids) => toggle(ids, id))}
+        />
       </Section>
 
       {state.status === "error" && state.message && (

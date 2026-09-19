@@ -21,7 +21,7 @@ This file is the single source of truth for this project. Read it fully at the s
 |---|---|
 | **Name** | BusinessMeet (working title) |
 | **What it does** | Dating-app-style matching for people who want to start a project (with or without an idea). Users match on shared venture interests, complementary skills, and commitment level. Chat unlocks only after a mutual like. |
-| **Target users** | Pre-founders: people with a side-project or small-business ambition, from an indie game on Steam to a local lawn-care business. **Launch audience: indie game makers only.** |
+| **Target users** | **First-time founders who want to start a small, non-tech business** (local services and trades, food, e-commerce, and similar), with or without an idea, plus remote-OK people who can help from anywhere. Anyone with a side-project ambition is welcome, including tech (indie games, apps). **All categories are open at launch** (changed 2026-09-19 by Elie; the original launch audience was indie game makers only). |
 | **Platform** | Mobile-first web app, installable as a PWA |
 | **Stack** | TypeScript, Next.js (App Router), Supabase (Postgres, Auth, Realtime, Storage), Vercel hosting, Tailwind |
 | **Budget** | €0 during development (free tiers only). Paid plans only at public launch. |
@@ -92,8 +92,8 @@ Key decisions:
   - share at least one **active** category with the current user;
   - share a way of working, **in both directions** (Elie, 2026-09-19: every match must be matchable): both take `remote` (any country), or both take `local` and live in the same place: same country and same city, the city compared ignoring capitals, accents and repeated spaces ("Zürich" = "zurich"). People who pick both Remote and Local reach the widest pool. If A sees B, B sees A.
   - Use `auth.uid()` inside the function. Never accept a user id as a parameter.
-- **Categories and skills are data, not code.** They live in tables with `is_active`. All categories are seeded; only **Video games** is active at launch. Activating a new category must require **no code change**: flip `is_active` and optionally insert its skills.
-  - While only one category is active, the profile form pre-selects it and hides the picker.
+- **Categories and skills are data, not code.** They live in tables with `is_active`. **All seven seeded categories are active** (Elie, 2026-09-19); closing or opening one is a data change (flip `is_active`), and a new category's skills are rows in `skills`. No code change.
+  - The profile form shows the category picker whenever more than one category is active (if only one is ever active again it is pre-selected and the picker is hidden).
   - The skills shown in the form are universal skills (`category_id IS NULL`) plus skills of the categories the user selected.
 - **Login is by email + password** (Elie's decision, 2026-09-19, replacing "magic link only"; see Decision Log and DEBT-001/013/017). Supabase stores only password hashes. The email link stays as the way back in for a forgotten password. Accounts are created on the login page ("Create account"); users change their password on `/profile`.
 - **Profile photos** go in a Storage bucket `avatars`, at path `{user_id}/...`. Users may write only in their own folder. Photos may be readable by logged-in users. Choose the simplest secure option per the current Supabase docs.
@@ -144,20 +144,27 @@ Other rules:
 
 ### Seed data (`supabase/seed.sql` or a seed migration)
 
-Categories (slug, name, active):
-- `video_games`, Video games, **active**
-- `local_services`, Local services, inactive
-- `ecommerce`, E-commerce, inactive
-- `content_media`, Content/media, inactive
-- `apps_software`, Apps/software, inactive
-- `food`, Food, inactive
-- `other`, Other, inactive
+Categories (slug, name, sort order), all **active** since 2026-09-19 (migration `20260919210000_open_all_categories.sql`):
+1. `local_services`, **Local services & trades** (trades were folded into it, Elie's decision)
+2. `food`, Food
+3. `ecommerce`, E-commerce
+4. `content_media`, Content/media
+5. `apps_software`, Apps/software
+6. `video_games`, Video games
+7. `other`, Other (no skills of its own; shows the universal ones)
 
-Universal skills (`category_id` null): Marketing, Community management, Sales, Finance/admin, Project management.
+Universal skills (`category_id` null, 9): Marketing, Community management, Sales, Finance/admin, Project management, Business planning, Legal & business registration, Branding & design, Website & online presence.
 
-Video games skills: Game programming, Game design, Level design, 2D art, 3D art, Animation, Audio/music, Writing/narrative, QA/testing.
+Skills per category (51):
+- Local services & trades (14): Hands-on service work, Scheduling & dispatch, Quoting & estimating, Customer service, Local marketing, Vehicles & equipment, Insurance & permits, Licences & safety compliance, Plumbing, Electrical, Carpentry, Painting & finishing, Tiling & masonry, Heating & air conditioning.
+- Food (8): Cooking & recipe development, Baking & pastry, Food safety & hygiene rules, Sourcing & suppliers, Front of house & service, Food photography, Packaging & labelling, Events & catering.
+- E-commerce (8): Product sourcing, Online store setup, Product photography, Copywriting, Paid ads, Logistics & fulfilment, Customer support, Inventory & pricing.
+- Content/media (6): Writing & editing, Video editing, Photography, Podcasting & audio, Social media content, Graphic design.
+- Apps/software (6): Web development, Mobile app development, UX/UI design, Data & analytics, Software testing, Hosting & DevOps.
+- Video games (9): Game programming, Game design, Level design, 2D art, 3D art, Animation, Audio/music, Writing/narrative, QA/testing.
 
-Skills for the other categories get added when each category is activated.
+Draft lists written by Claude and approved in principle by Elie; edit them freely as rows of `skills` (no code change).
+
 
 ---
 
@@ -282,6 +289,7 @@ Notes for later features:
 Waived by Elie on 2026-09-19 (not to be re-asked unless he raises them): photo upload from his phone and the F3/F4 phone layout checks. They remain untested by him.
 Still unconfirmed:
 - Profile redesign: both accounts must finish the new form (pick a country, Remote/Local switches, several answers, optional district). Then: Local + same country and city sees each other (try "lyon" vs "Lyon "), two Remote accounts always see each other, the card shows place and lists.
+- Audience pivot (built 2026-09-19, migration `20260919210000`, tested only by me with a throwaway user): the landing page has the new text and a "Log in or sign up" button; in the profile form the category picker shows 7 categories (Local services & trades first); picking categories adds skill groups ("For any business" plus one heading per picked category); unticking a category also drops its skills; the Remote helper hint shows under "How can you work together?". Elie's two accounts still have only Video games, so to see the non-tech side he should tick e.g. Food or Local services & trades on both and offer a matching skill. Phone layout unchecked.
 - F2 leftovers: opening an email login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link; the "Forgot your password?" email link.
 - F4 leftover: drag-to-swipe on a real phone (waived, see above).
 - F5 (mutual matches): with both real accounts finished (Remote, so they see each other): the account that has NOT yet swiped sees the other in its feed; pressing ♥ shows "It's a match!" if the other already liked it (John's account already has one like waiting for Elie's account); "See <name>" opens the match page; `/matches` lists the match on BOTH accounts (use a private window for the second one); a passed person never matches. Phone layout of the overlay, list and match page unchecked by me.
@@ -298,7 +306,6 @@ Still unconfirmed:
 - Compatibility-ranked feed (can use `weekly_hours` vs `partner_weekly_hours`)
 - Radius/map search for local projects
 - Group teams (3+ people), project pages
-- Activate more categories: Local services, E-commerce, Content/media, Apps/software, Food, Other
 
 ## Decision Log
 
@@ -326,6 +333,7 @@ Format: `date | decision | rejected alternatives | reason`
 - 2026-09-19 | Login switched to email + password (login page has "Log in" / "Create account" tabs; email link kept as a "forgot password" fallback; `/profile` has a change-password form that first checks the current password; passwords 8 to 72 characters). Elie's temporary password was set directly in the database by Claude and given to him in chat once; he is to change it on `/profile` | Magic link only (the earlier decision); custom SMTP now | Elie: "bypass this whole email thing". The built-in email limit (2 per hour) made testing impossible. Consequences explained: real email verification is skipped if "Confirm email" is off (DEBT-017), no password reset without email, breach-checking unavailable (DEBT-013)
 - 2026-09-19 | Profile redesign (Elie: "select all that fit", widest possible pool; migration `20260919190000_profile_multiselect.sql`): work mode is a set (Remote and/or Local, both pre-selected for new profiles); location = country dropdown (everyone) + city/village (required for Local) + optional district/arrondissement (country and city matter most; district is only shown); hours, partner hours, ambition and idea status are multi-select; new idea option "Open to merging ideas"; the feed matches on a shared way of working (both Remote, or both Local in the same country and city, ignoring capitals/accents/spaces). Existing answers were copied into lists; both existing profiles were set back to "not onboarded" so their owners confirm a country once (form pre-filled) | Place search with suggestions (more accurate, needs an outside service, kept for later); single-choice answers | Bigger pool, better fit for people whose situation is not one box. Consequences: remote-only people no longer see Local-only people in their own city unless they also pick Local; spelling variants across languages (Beirut/Beyrouth) do not match
 - 2026-09-19 | F5 matching: a database trigger (`create_match_on_mutual_like`, SECURITY DEFINER, fixed search_path) creates the `matches` row in the same transaction as the second like; it takes a short per-pair advisory lock first so two simultaneous likes cannot both miss each other (a race that the brief's design would otherwise allow); only likes count (a pass never matches); both must be onboarded and not blocked either way; the pair is stored in a fixed order. The app shows "It's a match!" on the second like, a `/matches` list and a `/matches/[id]` page with the other person's profile | Matching in application code; no lock | Atomic and race-free per the brief, plus guards for blocks and unfinished profiles
+- 2026-09-19 | **Audience pivot** (Elie): the main context is now first-time founders who want to start a small, non-tech business (local services, trades, food, e-commerce), plus remote-OK profiles; **all seven categories are open** (including Video games and Apps/software); trades are folded into "Local services & trades" rather than being their own category; the matching rule is unchanged (a local founder who also ticks Remote sees remote helpers, both boxes are pre-ticked, and the form and landing page now say remote helpers are welcome). Category skills were drafted and added (51 skills across 5 categories plus 4 new universal ones); the profile form groups skills under "For any business" and one heading per chosen category. Landing page text rewritten | Keeping Video games as the only open category (the original launch plan, an empty-feed guard); a separate Trades category; letting Local-only founders see Remote-only helpers | Elie's call. Trade-off to watch: with 7 open categories and few users, people spread thinly and some feeds will be empty (the original reason for launching with one category). Existing test profiles chose Video games only
 - 2026-09-19 | Next.js 16.3.5 (React 19, Tailwind 4, ESLint 9) scaffolded with create-next-app; `AGENTS.md` from the scaffold kept (tells AI tools to check bundled Next.js docs) | — | Current stable versions; matches the "check current docs" rule
 
 ## Debt Ledger
