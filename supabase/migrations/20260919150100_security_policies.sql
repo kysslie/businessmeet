@@ -39,7 +39,7 @@ grant select on public.profiles to authenticated;
 -- Column-level: users may edit their own details but never id / created_at / updated_at.
 grant update (
   display_name, avatar_path, city, work_mode, idea_status,
-  pitch, weekly_hours, ambition, onboarded
+  pitch, weekly_hours, partner_weekly_hours, ambition, onboarded
 ) on public.profiles to authenticated;
 
 grant select, insert, delete on public.profile_categories to authenticated;

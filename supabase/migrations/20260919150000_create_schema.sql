@@ -43,6 +43,9 @@ create table public.profiles (
   idea_status text,
   pitch text,
   weekly_hours text,
+  -- Hours per week the person would like a partner to commit (same ranges as
+  -- weekly_hours). Optional: null = no preference.
+  partner_weekly_hours text,
   ambition text,
   onboarded boolean not null default false,
   created_at timestamptz not null default now(),
@@ -58,6 +61,8 @@ create table public.profiles (
     check (idea_status in ('has_idea', 'wants_to_join', 'exploring')),
   constraint profiles_weekly_hours_values
     check (weekly_hours in ('lt_5', '5_10', '10_20', '20_plus')),
+  constraint profiles_partner_weekly_hours_values
+    check (partner_weekly_hours in ('lt_5', '5_10', '10_20', '20_plus')),
   constraint profiles_ambition_values
     check (ambition in ('for_fun', 'side_income', 'full_time')),
   constraint profiles_pitch_length

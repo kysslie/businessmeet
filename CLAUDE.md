@@ -107,7 +107,8 @@ Key decisions:
 
 ```
 profiles            id (PK, = auth.users.id), display_name, avatar_path, city,
-                    work_mode, idea_status, pitch, weekly_hours, ambition,
+                    work_mode, idea_status, pitch, weekly_hours,
+                    partner_weekly_hours (nullable), ambition,
                     onboarded (bool), created_at, updated_at
 categories          id, slug, name, is_active, sort_order
 skills              id, slug, name, category_id (nullable = universal), is_active
@@ -126,7 +127,8 @@ Fixed option sets are `text` columns with `CHECK` constraints, not Postgres enum
 |---|---|---|
 | `work_mode` | `remote_ok`, `local_only` | Remote OK / Local only |
 | `idea_status` | `has_idea`, `wants_to_join`, `exploring` | I have an idea / I want to join someone's idea / Exploring |
-| `weekly_hours` | `lt_5`, `5_10`, `10_20`, `20_plus` | <5 / 5–10 / 10–20 / 20+ |
+| `weekly_hours` | `lt_5`, `5_10`, `10_20`, `20_plus` | Hours per week I can commit: <5 / 5–10 / 10–20 / 20+ |
+| `partner_weekly_hours` | same four values, or null = no preference | Hours per week I'd like a partner to commit (optional). The feed does not filter on either hours field, so full-timers and part-timers see each other. |
 | `ambition` | `for_fun`, `side_income`, `full_time` | Side project for fun / Side income / Aim to go full-time |
 | `profile_skills.kind` | `offers`, `seeks` | — |
 | `swipes.direction` | `like`, `pass` | — |
@@ -242,13 +244,20 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 **Completed features:**
 - F0 — Setup (confirmed by Elie 2026-09-19). Live at https://businessmeet.vercel.app/. GitHub: kysslie/businessmeet. Vercel gotcha: Framework Preset must be Next.js.
 
-**In progress:** F1 — Schema migrations, RLS policies, seed data. Approved by Elie 2026-09-19. Supabase CLI runs via `npx supabase@2.117.0` (not added to package.json).
+**In progress:** F1 — Schema migrations, RLS policies, seed data. Applied to the hosted dev project on 2026-09-19 (3 migrations). `supabase/tests/rls_smoke_test.sql`: 83/83 checks passed; `db advisors`: no issues; no test data left behind. Waiting on: Elie confirming he sees the tables in the Supabase dashboard.
 
-**Next planned step:** F1 — write migrations, link to the dev project, push, test RLS
+How to work with the database from here (no Docker, no password prompt needed once linked and logged in):
+- Apply migrations: `npx supabase@2.117.0 db push` (preview first with `--dry-run`)
+- Run the security tests: `npx supabase@2.117.0 db query --linked -f supabase/tests/rls_smoke_test.sql` (it always ends with a deliberate "error" that holds the PASS/FAIL report and rolls everything back)
+- Automatic security check: `npx supabase@2.117.0 db advisors --linked`
+- Every new migration must also revoke default grants and grant only what is needed, then enable RLS (see migration 2).
+
+**Next planned step:** F2 — Magic-link login, logout, route protection (needs Supabase Auth URL settings for the Vercel domain; add `@supabase/supabase-js`, `@supabase/ssr`, `zod` per the dependency table, and generate `src/types/database.ts`)
 
 **Backlog (post-MVP):**
 - Email/push notifications on new match (first priority after MVP)
-- Compatibility-ranked feed
+- Easier discovery beyond swipe-style matching (browse/search profiles; revisit the strict profile-visibility rule). Elie: "we are not strictly a dating app"
+- Compatibility-ranked feed (can use `weekly_hours` vs `partner_weekly_hours`)
 - Radius/map search for local projects
 - Group teams (3+ people), project pages
 - Activate more categories: Local services, E-commerce, Content/media, Apps/software, Food, Other
@@ -269,6 +278,9 @@ Format: `date | decision | rejected alternatives | reason`
 - 2026-09-19 | Built by Claude Code, with planning in a separate Claude chat; this file is the handover | Cowork for coding | Claude Code works directly on the project files
 - 2026-09-19 | Communicate with Elie in plain English; technical detail only when a decision needs it | — | Elie's preference
 - 2026-09-19 | Supabase key naming follows current docs: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (was "anon key") and server-only `SUPABASE_SECRET_KEY` (was "service role key"). Wherever this file says "service role key", it means the secret key. | Legacy anon/service_role keys | Legacy keys are being deprecated by end of 2026
+- 2026-09-19 | Profile privacy for MVP: users can read only their own profile and their matches' profiles; the swipe feed hands out candidates through the `get_feed()` function (F4). Elie: fine for now, wants people to find each other more easily than in a dating app, revisit after MVP | Letting every logged-in user read all onboarded profiles | Stops scraping of the whole user list; easy to loosen later with a policy change
+- 2026-09-19 | Added optional `profiles.partner_weekly_hours` (hours I'd like a partner to commit; null = no preference) alongside `weekly_hours`; neither filters the feed | Exact hours; nothing new | Elie wants full-timers and part-timers to find each other
+- 2026-09-19 | Sign-up trigger creates an empty profile row for every new auth user; `onboarded` only true when required fields are filled (DB constraint). Length limits chosen: display name 50, city 100, report reason 100, report details 1000 | Client-side profile insert | Profile always exists; rules live in the database
 - 2026-09-19 | Next.js 16.3.5 (React 19, Tailwind 4, ESLint 9) scaffolded with create-next-app; `AGENTS.md` from the scaffold kept (tells AI tools to check bundled Next.js docs) | — | Current stable versions; matches the "check current docs" rule
 
 ## Debt Ledger
