@@ -45,3 +45,6 @@ next-env.d.ts
 
 # local password notes, never commit
 /Psswrds/
+
+# Elie's private ideas notes (read by Claude at session start, never committed)
+/ideas.txt
