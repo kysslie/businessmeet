@@ -253,9 +253,15 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 - F2 — Magic-link login, logout, route protection (confirmed by Elie 2026-09-19: login works, session survives refresh, logout works, logged-out `/feed` redirects to `/login`). Packages added: `@supabase/supabase-js`, `@supabase/ssr`, `zod`. First real-email test failed (standard link returns `?code=`, first version only understood `token_hash`); fixed in `auth/callback/route.ts`. Elie decided to live with the standard email for now (DEBT-001).
 
-**In progress:** F3 — Onboarding and profile edit, including photo upload. Elie approved the plan 2026-09-19 (photo optional; at least 1 offered skill required; private `avatars` bucket). Built: migration `20260919160000_avatars_storage.sql` (applied), `/onboarding`, `/profile`, `saveProfile` server action, photo shrinking in the browser, feed placeholder redirects to onboarding. Tested by me with a throwaway user (since deleted): validation errors, conditional city/pitch, 5.7 MB photo shrunk to 114 KB, save, edit, photo replace (old file deleted), photo remove, category auto-selected, signed photo link loads. RLS test script: 94/94. NOT yet tested by Elie with his real account/phone. Waiting on: Elie's test.
+- F3 — Onboarding and profile edit, including photo upload (validated by Elie 2026-09-19). Onboarding worked with two real accounts. **Not tested by Elie, he waived it: photo upload/replace/remove and the phone layout.** Tested by me only, with throwaway users. Migration `20260919160000_avatars_storage.sql`; RLS/storage tests in `supabase/tests/rls_smoke_test.sql`.
 
-**Also built, ahead of Elie's F3 confirmation (he told me to keep working while the email limit reset):** F4 — Feed and swipe via `get_feed()`. Migration `20260919170000_get_feed.sql` applied (SECURITY DEFINER, `auth.uid()`, no parameters, max 20, random order). `/feed` shows one card at a time with ✕/♥ buttons and drag-to-swipe (100 px threshold); `recordSwipe` server action; swipes are permanent. RLS/feed test script: 122/122 (28 new feed checks: shared active category, same-city matching ignoring case/spaces, already-swiped, blocked both ways, not-onboarded, max 20, no user-id parameter, anon refused). Browser-tested by me with 4 throwaway users (since deleted): cards, photo via signed link, hours line, like button, drag left/right, short drag ignored, caught-up screen, swiped people never return, failed swipe brings the card back with an error. NOT yet confirmed by Elie.
+- F4 — Feed and swipe via `get_feed()` (validated by Elie 2026-09-19): a real second account appeared in the first one's feed; liking it made it disappear (1 like recorded). **Not tested by Elie, he waived it: drag-to-swipe and phone layout.** Rule made two-way (both Remote, or same place) and later rebuilt for the profile redesign.
+
+- Password login (validated by Elie 2026-09-19): created a second account with email + password, changed his temporary password on `/profile` (verified: the old password is refused). "Confirm email" is off in Supabase (DEBT-017).
+
+- Shipped but NOT yet confirmed by Elie: the **profile redesign** (select-all-that-fit answers, Remote/Local switches, country + city + district; migration `20260919190000_profile_multiselect.sql`). Both his accounts were set back to "not onboarded" and still are: nobody has finished the new form yet, so neither account currently appears in a feed. See "Pending tests for Elie".
+
+**In progress:** F5 — Mutual-match trigger and matches list. Started 2026-09-19 after Elie said to validate F3/F4 and move on.
 
 Rule for schema changes: all table/column/policy changes go through a new numbered file in `supabase/migrations/`, never through the Supabase dashboard's Table Editor (dashboard edits are not recorded in the repo and new columns would miss the grants). Editing data rows in the dashboard (e.g. flipping `categories.is_active`, adding skills) is fine.
 
@@ -265,7 +271,7 @@ How to work with the database from here (no Docker, no password prompt needed on
 - Automatic security check: `npx supabase@2.117.0 db advisors --linked`
 - Every new migration must also revoke default grants and grant only what is needed, then enable RLS (see migration 2).
 
-**Next planned step:** Elie's real-account tests of F3 and F4 (see "Pending tests for Elie"), his answer on the work-mode question in the Decision Log, then F5 (mutual-match trigger and matches list; needs two accounts, so custom email or demo accounts should be decided first).
+**Next planned step:** finish F5, then F6 (realtime chat). Elie should complete the redesigned profile on both accounts (country etc.) so they can see each other and test matching.
 
 Notes for later features:
 - F4: `get_feed()` must be `SECURITY DEFINER` with a fixed `search_path` (users cannot read other people's profiles directly); it must return the candidate's skills/categories and enough info to build a signed photo link (`avatar_path`), and signed links for other people's photos are created server-side.
@@ -273,13 +279,12 @@ Notes for later features:
 - F6: the plain Node 20 runtime has no built-in WebSocket; Next.js/Vercel handle it, but check realtime works in local dev on Node 20.
 
 **Pending tests for Elie** (a feature is only complete when he confirms it). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`.
-Confirmed by Elie on 2026-09-19 (his message, backed by database checks): "Confirm email" is off; he created a second account with email + password and it worked; both accounts finished onboarding (so onboarding works with real accounts); the second account showed up in the first one's feed; he liked it and it disappeared from the feed (1 like recorded).
-Built after that, tested only by me with two throwaway users (deleted): the **profile redesign** (2026-09-19). Both of Elie's accounts were set back to "not onboarded", so the next time he opens the app they land on "Set up your profile" with their old answers pre-filled and a country still to choose. To test: (1) log in, pick a country, check that Remote and Local are both pre-selected and can be switched on/off, that Local asks for a city, that idea status / hours / partner hours / ambitions accept several answers, that "I have an idea" shows the pitch box, then Finish profile; (2) do the same for the second account; (3) in the feed, an account with Local + the same country and city as the other one sees them (try "lyon" vs "Lyon "), and two Remote accounts always see each other; (4) the card shows place, several hour ranges, ideas and ambitions; phone layout and the long country dropdown on a phone are unchecked by me.
+Waived by Elie on 2026-09-19 (not to be re-asked unless he raises them): photo upload from his phone and the F3/F4 phone layout checks. They remain untested by him.
 Still unconfirmed:
-- Password login: changing his temporary password on `/profile` ("Password" section); wrong password message; logging out and in again with the new password; the "Forgot your password?" email link (needs the email limit to allow it).
-- F3: photo upload from his phone (no photo has been uploaded yet), editing the profile ("Saved."), replacing/removing a photo, phone layout, the redirects between /onboarding, /profile and /feed. I could not take screenshots.
-- F2 leftovers: opening an email login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link.
-- F4: drag-to-swipe on a real phone (right = like, left = pass), the ✕ pass button, "You're all caught up" and "Check for new people", photos and hours on cards, phone layout.
+- Profile redesign: both accounts must finish the new form (pick a country, Remote/Local switches, several answers, optional district). Then: Local + same country and city sees each other (try "lyon" vs "Lyon "), two Remote accounts always see each other, the card shows place and lists.
+- F2 leftovers: opening an email login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link; the "Forgot your password?" email link.
+- F4 leftover: drag-to-swipe on a real phone (waived, see above).
+- F5: added here when shipped.
 
 **Ideas file:** `ideas.txt` in the project root is Elie's private scratchpad for future ideas. It is git-ignored (never committed). Read it at the start of each session; move anything worth keeping into the Backlog below, in Elie's words.
 
