@@ -90,7 +90,7 @@ Key decisions:
   - have not already been swiped by the current user;
   - are not blocked in either direction;
   - share at least one **active** category with the current user;
-  - are work-mode compatible **in both directions** (Elie, 2026-09-19: every match must be matchable): two people see each other only if both are remote-OK, or they are in the same city (case-insensitive, trimmed text match). If A sees B, B sees A.
+  - share a way of working, **in both directions** (Elie, 2026-09-19: every match must be matchable): both take `remote` (any country), or both take `local` and live in the same place: same country and same city, the city compared ignoring capitals, accents and repeated spaces ("Zürich" = "zurich"). People who pick both Remote and Local reach the widest pool. If A sees B, B sees A.
   - Use `auth.uid()` inside the function. Never accept a user id as a parameter.
 - **Categories and skills are data, not code.** They live in tables with `is_active`. All categories are seeded; only **Video games** is active at launch. Activating a new category must require **no code change**: flip `is_active` and optionally insert its skills.
   - While only one category is active, the profile form pre-selects it and hides the picker.
@@ -106,9 +106,10 @@ Key decisions:
 ## 5. Data model
 
 ```
-profiles            id (PK, = auth.users.id), display_name, avatar_path, city,
-                    work_mode, idea_status, pitch, weekly_hours,
-                    partner_weekly_hours (nullable), ambition,
+profiles            id (PK, = auth.users.id), display_name, avatar_path,
+                    country (2-letter code), city, district (nullable),
+                    work_modes[], idea_statuses[], pitch, weekly_hours[],
+                    partner_weekly_hours[] (nullable), ambitions[],
                     onboarded (bool), created_at, updated_at
 categories          id, slug, name, is_active, sort_order
 skills              id, slug, name, category_id (nullable = universal), is_active
@@ -121,20 +122,23 @@ blocks              blocker_id, blocked_id, created_at      (PK both)
 reports             id, reporter_id, reported_id, reason, details, created_at
 ```
 
-Fixed option sets are `text` columns with `CHECK` constraints, not Postgres enums:
+Fixed option sets are `text` (or `text[]`, "select all that fit") columns with `CHECK` constraints, not Postgres enums. Changed 2026-09-19 (Elie): most answers are now lists.
 
 | Column | Allowed values | Label shown to users |
 |---|---|---|
-| `work_mode` | `remote_ok`, `local_only` | Remote OK / Local only |
-| `idea_status` | `has_idea`, `wants_to_join`, `exploring` | I have an idea / I want to join someone's idea / Exploring |
-| `weekly_hours` | `lt_5`, `5_10`, `10_20`, `20_plus` | Hours per week I can commit: <5 / 5–10 / 10–20 / 20+ |
-| `partner_weekly_hours` | same four values, or null = no preference | Hours per week I'd like a partner to commit (optional). The feed does not filter on either hours field, so full-timers and part-timers see each other. |
-| `ambition` | `for_fun`, `side_income`, `full_time` | Side project for fun / Side income / Aim to go full-time |
+| `work_modes` (list, at least 1) | `remote`, `local` | Remote / Local. Pick both to reach the widest pool. |
+| `country` | 2-letter capital code, e.g. `FR` (list in `src/lib/countries.ts`) | Country dropdown, asked of everyone |
+| `city`, `district` | free text (max 100). City required if `local` is picked | City or village / District or arrondissement (optional, shown on the card, not used for matching) |
+| `idea_statuses` (list, at least 1) | `has_idea`, `wants_to_join`, `open_to_merge`, `exploring` | I have an idea / I want to join someone's idea / Open to merging ideas / Exploring |
+| `weekly_hours` (list, at least 1) | `lt_5`, `5_10`, `10_20`, `20_plus` | Hours per week I can commit: <5 / 5–10 / 10–20 / 20+ (every range that fits) |
+| `partner_weekly_hours` (list, null = no preference) | same four values | Hours per week I'd like a partner to commit (optional, every range that fits). The feed does not filter on either hours field. |
+| `ambitions` (list, at least 1) | `for_fun`, `side_income`, `full_time` | Side project for fun / Side income / Aim to go full-time (e.g. side income first, full-time later) |
 | `profile_skills.kind` | `offers`, `seeks` | — |
 | `swipes.direction` | `like`, `pass` | — |
 
 Other rules:
-- `pitch`: max 280 characters. Required only when `idea_status = has_idea`.
+- `pitch`: max 280 characters. Required only when `idea_statuses` contains `has_idea`.
+- Onboarding is complete (`onboarded = true`) only with: name, country, at least one work mode / idea status / hours range / ambition; a city if `local` is picked; a pitch if `has_idea` is picked (database CHECK `profiles_onboarded_complete`).
 - `messages.body`: max 2000 characters, not empty.
 - Every foreign key pointing to a user uses `ON DELETE CASCADE`.
 
@@ -270,6 +274,7 @@ Notes for later features:
 
 **Pending tests for Elie** (a feature is only complete when he confirms it). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`.
 Confirmed by Elie on 2026-09-19 (his message, backed by database checks): "Confirm email" is off; he created a second account with email + password and it worked; both accounts finished onboarding (so onboarding works with real accounts); the second account showed up in the first one's feed; he liked it and it disappeared from the feed (1 like recorded).
+Built after that, tested only by me with two throwaway users (deleted): the **profile redesign** (2026-09-19). Both of Elie's accounts were set back to "not onboarded", so the next time he opens the app they land on "Set up your profile" with their old answers pre-filled and a country still to choose. To test: (1) log in, pick a country, check that Remote and Local are both pre-selected and can be switched on/off, that Local asks for a city, that idea status / hours / partner hours / ambitions accept several answers, that "I have an idea" shows the pitch box, then Finish profile; (2) do the same for the second account; (3) in the feed, an account with Local + the same country and city as the other one sees them (try "lyon" vs "Lyon "), and two Remote accounts always see each other; (4) the card shows place, several hour ranges, ideas and ambitions; phone layout and the long country dropdown on a phone are unchecked by me.
 Still unconfirmed:
 - Password login: changing his temporary password on `/profile` ("Password" section); wrong password message; logging out and in again with the new password; the "Forgot your password?" email link (needs the email limit to allow it).
 - F3: photo upload from his phone (no photo has been uploaded yet), editing the profile ("Saved."), replacing/removing a photo, phone layout, the redirects between /onboarding, /profile and /feed. I could not take screenshots.
@@ -279,6 +284,7 @@ Still unconfirmed:
 **Ideas file:** `ideas.txt` in the project root is Elie's private scratchpad for future ideas. It is git-ignored (never committed). Read it at the start of each session; move anything worth keeping into the Backlog below, in Elie's words.
 
 **Backlog (post-MVP):**
+- Place search with suggestions (autocomplete from an outside service) for a canonical city, spelling variants across languages, and distance/radius matching later. Kept out of the MVP; today's city is free text compared ignoring capitals/accents/spaces. (Elie chose the simple version, 2026-09-19)
 - Broader "Haves and Needs" beyond skills (e.g. capital, network, equipment, domain expertise), and industry-specific haves/needs grouped per industry when more categories open. Elie: fine as game-design skills only for now. The categories/skills tables already support per-industry skills; this is about widening what people can offer or seek. (Elie, 2026-09-19)
 - Collaboration type / capital search: whether someone wants paid help (freelance, for cash) or a true partner who works for a share of the venture. The equity partner is the original vision of the app; the paid-help side is an interesting extension. Likely a profile field plus a search filter. (From ideas.txt, 2026-09-19)
 - Custom email (SMTP) for login: removes the 2-emails-per-hour limit, allows a proper branded email template, and fixes the login link only working in the browser that requested it. See DEBT-001. Elie: fine for now, fix later (re-check at F5, which needs two accounts)
@@ -313,6 +319,7 @@ Format: `date | decision | rejected alternatives | reason`
 - 2026-09-19 | F4 feed: random order, max 20 per batch; UI = one card at a time, drag or ✕/♥ buttons; swipes are permanent | Ranked feed; undo | Ship first, rank later (per brief)
 - 2026-09-19 | Work-mode rule made two-way (migration `20260919180000_get_feed_symmetric.sql`): two people see each other only if both are Remote OK, or they are in the same city (trimmed, case-insensitive). Elie: "every match must be matchable" | The first version followed the brief literally (the viewer's own mode decides), which let a Remote OK person see a Local-only person in another city who could never see them back | A like that can never become a match is a dead end
 - 2026-09-19 | Login switched to email + password (login page has "Log in" / "Create account" tabs; email link kept as a "forgot password" fallback; `/profile` has a change-password form that first checks the current password; passwords 8 to 72 characters). Elie's temporary password was set directly in the database by Claude and given to him in chat once; he is to change it on `/profile` | Magic link only (the earlier decision); custom SMTP now | Elie: "bypass this whole email thing". The built-in email limit (2 per hour) made testing impossible. Consequences explained: real email verification is skipped if "Confirm email" is off (DEBT-017), no password reset without email, breach-checking unavailable (DEBT-013)
+- 2026-09-19 | Profile redesign (Elie: "select all that fit", widest possible pool; migration `20260919190000_profile_multiselect.sql`): work mode is a set (Remote and/or Local, both pre-selected for new profiles); location = country dropdown (everyone) + city/village (required for Local) + optional district/arrondissement (country and city matter most; district is only shown); hours, partner hours, ambition and idea status are multi-select; new idea option "Open to merging ideas"; the feed matches on a shared way of working (both Remote, or both Local in the same country and city, ignoring capitals/accents/spaces). Existing answers were copied into lists; both existing profiles were set back to "not onboarded" so their owners confirm a country once (form pre-filled) | Place search with suggestions (more accurate, needs an outside service, kept for later); single-choice answers | Bigger pool, better fit for people whose situation is not one box. Consequences: remote-only people no longer see Local-only people in their own city unless they also pick Local; spelling variants across languages (Beirut/Beyrouth) do not match
 - 2026-09-19 | Next.js 16.3.5 (React 19, Tailwind 4, ESLint 9) scaffolded with create-next-app; `AGENTS.md` from the scaffold kept (tells AI tools to check bundled Next.js docs) | — | Current stable versions; matches the "check current docs" rule
 
 ## Debt Ledger
@@ -325,6 +332,7 @@ Tags: `[BLOCKER]` `[HIGH]` `[LOW]`
 - [LOW] DEBT-012 Photo links are readable by any logged-in user who knows the exact file path (path contains two random IDs). Accepted for the MVP per the brief; revisit with the profile-visibility rule.
 - [HIGH] DEBT-013 Passwords are now the main login (2026-09-19). Supabase advisor warns "leaked password protection disabled" (checks passwords against known breaches; may need a paid Supabase plan, check current docs). App-side rules today: 8 to 72 characters, current password required to change it. Revisit before public launch.
 - [HIGH] DEBT-017 If Supabase "Confirm email" is switched OFF (so accounts can be created without email, which Elie wants while the email limit exists), anyone can register with an address they do not own; no email is ever verified, and there is no password reset except the email-link fallback (which needs working email, DEBT-001). Fine for private testing. Before public launch: turn "Confirm email" back ON and set up custom SMTP (DEBT-001). Also clean out any accounts made with fake addresses.
+- [LOW] DEBT-018 City and district are free text. The same place written in another language or with a typo (Beirut/Beyrouth, Lyon/Lion) does not match. Country is a fixed list, so only the city part can drift. Fix later with place search (see Backlog).
 - [LOW] DEBT-014 Recording a swipe only checks that you are the swiper and the target exists; it does not re-check that the target is in your feed (onboarded, not blocked, shares a category). Harmless today (swipes alone do nothing). The F5 match trigger and F7 block logic must not create matches with blocked or non-onboarded people.
 - [LOW] DEBT-015 Supabase advisor warns that `get_feed` is a SECURITY DEFINER function callable by logged-in users. Intentional and accepted (it is the controlled way to see other people; uses `auth.uid()`, no parameters, returns only card fields).
 - [LOW] DEBT-016 Swipes cannot be undone and there is no "seen you already" review list. A mis-tap is permanent. Consider an undo for the last swipe after the MVP.
