@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { changePasswordSchema } from "@/lib/validation/auth";
 import { profileSchema } from "@/lib/validation/profile";
 import { AVATAR_MAX_BYTES, AVATAR_TYPES } from "@/lib/profile-options";
 
@@ -221,4 +222,58 @@ export async function saveProfile(
 function failed(step: string, error: { code?: string; message: string }): ProfileFormState {
   console.error(`saveProfile failed while ${step}:`, error.code, error.message);
   return { status: "error", message: GENERIC_ERROR };
+}
+
+export type ChangePasswordState = {
+  status: "idle" | "error" | "done";
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+// Changes the logged-in user's password. The current password is checked first, so
+// someone who finds an unlocked phone cannot quietly take over the account.
+export async function changePassword(
+  _previous: ChangePasswordState,
+  formData: FormData,
+): Promise<ChangePasswordState> {
+  const parsed = changePasswordSchema.safeParse({
+    current_password: formData.get("current_password"),
+    new_password: formData.get("new_password"),
+    confirm_password: formData.get("confirm_password"),
+  });
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) fieldErrors[String(issue.path[0])] ??= issue.message;
+    return { status: "error", fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getClaims();
+  const email = typeof auth?.claims?.email === "string" ? auth.claims.email : null;
+  if (!email) redirect("/login");
+
+  // Check the current password by logging in with it.
+  const check = await supabase.auth.signInWithPassword({
+    email,
+    password: parsed.data.current_password,
+  });
+  if (check.error) {
+    if (check.error.status === 429) {
+      return { status: "error", message: "Too many attempts. Please wait a few minutes and try again." };
+    }
+    return { status: "error", fieldErrors: { current_password: "That isn't your current password." } };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.new_password });
+  if (error) {
+    console.error("updateUser(password) failed:", error.status, error.code);
+    if (error.code === "weak_password") {
+      return { status: "error", fieldErrors: { new_password: "That password is too easy to guess. Try a longer one." } };
+    }
+    if (error.code === "same_password") {
+      return { status: "error", fieldErrors: { new_password: "Choose a password different from the current one." } };
+    }
+    return { status: "error", message: "We couldn't change your password. Please try again." };
+  }
+  return { status: "done" };
 }

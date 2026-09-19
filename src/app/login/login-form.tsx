@@ -5,7 +5,7 @@ import { requestLoginLink, type LoginState } from "./actions";
 
 const initialState: LoginState = { status: "idle" };
 
-export function LoginForm() {
+export function MagicLinkForm() {
   const [state, formAction, pending] = useActionState(requestLoginLink, initialState);
 
   if (state.status === "sent") {

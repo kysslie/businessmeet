@@ -1,4 +1,4 @@
-import { LoginForm } from "./login-form";
+import { AuthPanel } from "./auth-panel";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { error } = await searchParams;
@@ -8,8 +8,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Log in or sign up</h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          No password needed. We email you a link that logs you in. New here? The same step
-          creates your account.
+          Use your email and a password. New here? Choose &ldquo;Create account&rdquo;.
         </p>
       </div>
       {(error === "link" || error === "browser") && (
@@ -18,11 +17,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           role="alert"
         >
           {error === "browser"
-            ? "Please open the login link in the same browser you requested it in. Request a new link below and open it there."
-            : "That login link is invalid or has expired. Request a new one below."}
+            ? "Please open the login link in the same browser you requested it in. Request a new link and open it there."
+            : "That login link is invalid or has expired. Log in with your password, or request a new link."}
         </p>
       )}
-      <LoginForm />
+      <AuthPanel />
     </main>
   );
 }
