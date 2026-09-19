@@ -241,7 +241,7 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 **Completed features:** none
 
-**In progress:** F0 — Setup. Done: Node/Git checked, Next.js scaffolded, landing page, lint/type-check/build pass, Git repo created. Waiting on Elie: GitHub repo, Supabase dev project, Vercel project + env vars, deploy.
+**In progress:** F0 — Setup. Done: Node/Git checked, Next.js scaffolded, landing page, lint/type-check/build pass, Git repo created. GitHub repo created (kysslie/businessmeet), Supabase dev project created, `.env.local` checked (URL + publishable key verified live). Waiting on: first push to GitHub (needs Elie's sign-in), confirm Vercel deploy shows the landing page.
 
 **Next planned step:** F0 — finish accounts and first deploy
 
@@ -280,4 +280,5 @@ Tags: `[BLOCKER]` `[HIGH]` `[LOW]`
 - [HIGH] DEBT-004 Privacy policy and terms (including an 18+ age rule) need a real review before launch. What gets drafted here is not legal advice.
 - [LOW] DEBT-005 `npm install` warns that ESLint 9.39.5 is no longer supported. Upgrade when `eslint-config-next` supports the newer major.
 - [LOW] DEBT-006 `globals.css` sets body font to Arial, overriding the Geist font the scaffold loads. Decide on the app font during UI work.
+- [HIGH] DEBT-008 `SUPABASE_SECRET_KEY` in `.env.local` was rejected (HTTP 401) by the Supabase admin API on 2026-09-19; the publishable key and URL work. Cause unknown (possible copy error or key format). Re-copy the secret key from Supabase Settings > API Keys and re-test before F8.
 - [LOW] DEBT-007 Unused scaffold images remain in `public/` (next.svg, vercel.svg, etc.). Remove during cleanup.
