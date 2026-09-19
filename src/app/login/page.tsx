@@ -12,12 +12,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           creates your account.
         </p>
       </div>
-      {error === "link" && (
+      {(error === "link" || error === "browser") && (
         <p
           className="rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
           role="alert"
         >
-          That login link is invalid or has expired. Request a new one below.
+          {error === "browser"
+            ? "Please open the login link in the same browser you requested it in. Request a new link below and open it there."
+            : "That login link is invalid or has expired. Request a new one below."}
         </p>
       )}
       <LoginForm />

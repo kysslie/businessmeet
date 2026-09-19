@@ -13,8 +13,8 @@ export function LoginForm() {
       <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800" role="status">
         <p className="font-medium">Check your email</p>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          We sent a login link to <strong>{state.email}</strong>. Open it on this device to
-          log in. The link works once and expires after an hour.
+          We sent a login link to <strong>{state.email}</strong>. Open it in this same
+          browser to log in. The link works once and expires after an hour.
         </p>
       </div>
     );
