@@ -236,49 +236,55 @@ export type Database = {
       }
       profiles: {
         Row: {
-          ambition: string | null
+          ambitions: string[] | null
           avatar_path: string | null
           city: string | null
+          country: string | null
           created_at: string
           display_name: string | null
+          district: string | null
           id: string
-          idea_status: string | null
+          idea_statuses: string[] | null
           onboarded: boolean
-          partner_weekly_hours: string | null
+          partner_weekly_hours: string[] | null
           pitch: string | null
           updated_at: string
-          weekly_hours: string | null
-          work_mode: string | null
+          weekly_hours: string[] | null
+          work_modes: string[] | null
         }
         Insert: {
-          ambition?: string | null
+          ambitions?: string[] | null
           avatar_path?: string | null
           city?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
+          district?: string | null
           id: string
-          idea_status?: string | null
+          idea_statuses?: string[] | null
           onboarded?: boolean
-          partner_weekly_hours?: string | null
+          partner_weekly_hours?: string[] | null
           pitch?: string | null
           updated_at?: string
-          weekly_hours?: string | null
-          work_mode?: string | null
+          weekly_hours?: string[] | null
+          work_modes?: string[] | null
         }
         Update: {
-          ambition?: string | null
+          ambitions?: string[] | null
           avatar_path?: string | null
           city?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
+          district?: string | null
           id?: string
-          idea_status?: string | null
+          idea_statuses?: string[] | null
           onboarded?: boolean
-          partner_weekly_hours?: string | null
+          partner_weekly_hours?: string[] | null
           pitch?: string | null
           updated_at?: string
-          weekly_hours?: string | null
-          work_mode?: string | null
+          weekly_hours?: string[] | null
+          work_modes?: string[] | null
         }
         Relationships: []
       }
@@ -400,22 +406,25 @@ export type Database = {
       get_feed: {
         Args: never
         Returns: {
-          ambition: string
+          ambitions: string[]
           avatar_path: string
           category_names: string[]
           city: string
+          country: string
           display_name: string
+          district: string
           id: string
-          idea_status: string
+          idea_statuses: string[]
           offers: string[]
-          partner_weekly_hours: string
+          partner_weekly_hours: string[]
           pitch: string
           seeks: string[]
-          weekly_hours: string
-          work_mode: string
+          weekly_hours: string[]
+          work_modes: string[]
         }[]
       }
       is_match_partner: { Args: { other_user: string }; Returns: boolean }
+      normalize_place: { Args: { place: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { saveProfile, type ProfileFormState } from "@/app/profile/actions";
+import { COUNTRIES } from "@/lib/countries";
 import type { ProfileFormData } from "@/lib/profile-data";
 import {
   AMBITIONS,
@@ -47,16 +48,15 @@ function Section({
   );
 }
 
-// One tappable answer. Works for radio buttons (pick one) and checkboxes (pick several).
+// One tappable answer. Every question in this form is "select all that fit", so these are
+// checkboxes shown as pills.
 function Choice({
-  type,
   name,
   value,
   label,
   checked,
   onChange,
 }: {
-  type: "radio" | "checkbox";
   name: string;
   value: string | number;
   label: string;
@@ -66,7 +66,7 @@ function Choice({
   return (
     <label className="cursor-pointer">
       <input
-        type={type}
+        type="checkbox"
         name={name}
         value={value}
         checked={checked}
@@ -80,8 +80,36 @@ function Choice({
   );
 }
 
-function toggle(list: number[], id: number) {
-  return list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
+function toggle<T>(list: T[], item: T) {
+  return list.includes(item) ? list.filter((existing) => existing !== item) : [...list, item];
+}
+
+// A group of pills bound to one list of chosen values.
+function ChoiceGroup({
+  name,
+  options,
+  selected,
+  onChange,
+}: {
+  name: string;
+  options: readonly { value: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => (
+        <Choice
+          key={option.value}
+          name={name}
+          value={option.value}
+          label={option.label}
+          checked={selected.includes(option.value)}
+          onChange={() => onChange(toggle(selected, option.value))}
+        />
+      ))}
+    </div>
+  );
 }
 
 export function ProfileForm({
@@ -97,13 +125,16 @@ export function ProfileForm({
 
   // All fields are controlled so nothing typed is lost if saving fails.
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
-  const [workMode, setWorkMode] = useState(profile.work_mode ?? "");
+  // New profiles start with both Remote and Local picked: that reaches the most people.
+  const [workModes, setWorkModes] = useState<string[]>(profile.work_modes ?? ["remote", "local"]);
+  const [country, setCountry] = useState(profile.country ?? "");
   const [city, setCity] = useState(profile.city ?? "");
-  const [ideaStatus, setIdeaStatus] = useState(profile.idea_status ?? "");
+  const [district, setDistrict] = useState(profile.district ?? "");
+  const [ideaStatuses, setIdeaStatuses] = useState<string[]>(profile.idea_statuses ?? []);
   const [pitch, setPitch] = useState(profile.pitch ?? "");
-  const [weeklyHours, setWeeklyHours] = useState(profile.weekly_hours ?? "");
-  const [partnerHours, setPartnerHours] = useState(profile.partner_weekly_hours ?? "");
-  const [ambition, setAmbition] = useState(profile.ambition ?? "");
+  const [weeklyHours, setWeeklyHours] = useState<string[]>(profile.weekly_hours ?? []);
+  const [partnerHours, setPartnerHours] = useState<string[]>(profile.partner_weekly_hours ?? []);
+  const [ambitions, setAmbitions] = useState<string[]>(profile.ambitions ?? []);
   const [categoryIds, setCategoryIds] = useState<number[]>(data.categoryIds);
   const [offers, setOffers] = useState<number[]>(data.offers);
   const [seeks, setSeeks] = useState<number[]>(data.seeks);
@@ -114,6 +145,7 @@ export function ProfileForm({
   );
   const visibleIds = new Set(visibleSkills.map((skill) => skill.id));
   const onlyOneCategory = categories.length === 1;
+  const wantsLocal = workModes.includes("local");
 
   return (
     <form action={formAction} className="flex flex-col gap-8">
@@ -140,7 +172,6 @@ export function ProfileForm({
             {categories.map((category) => (
               <Choice
                 key={category.id}
-                type="checkbox"
                 name="category_ids"
                 value={category.id}
                 label={category.name}
@@ -152,57 +183,73 @@ export function ProfileForm({
         </Section>
       )}
 
-      <Section legend="Where can you work?" error={errors.work_mode}>
-        <div className="flex flex-wrap gap-2">
-          {WORK_MODES.map((option) => (
-            <Choice
-              key={option.value}
-              type="radio"
-              name="work_mode"
-              value={option.value}
-              label={option.label}
-              checked={workMode === option.value}
-              onChange={() => setWorkMode(option.value)}
-            />
-          ))}
-        </div>
-        {workMode === "local_only" && (
-          <div className="flex flex-col gap-2">
-            <input
-              name="city"
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              autoComplete="address-level2"
-              placeholder="Your city"
-              maxLength={100}
-              className={inputClass}
-              aria-label="Your city"
-            />
-            <p className="text-sm text-zinc-500">
-              Local-only people are matched with others in the same city.
-            </p>
-            <FieldError message={errors.city} />
-          </div>
-        )}
-        {/* Remote-OK people can keep a city too; it is just optional. */}
-        {workMode === "remote_ok" && <input type="hidden" name="city" value={city} />}
+      <Section
+        legend="How can you work together?"
+        hint="Pick both to reach the most people."
+        error={errors.work_modes}
+      >
+        <ChoiceGroup name="work_modes" options={WORK_MODES} selected={workModes} onChange={setWorkModes} />
       </Section>
 
-      <Section legend="Where are you with your idea?" error={errors.idea_status}>
-        <div className="flex flex-wrap gap-2">
-          {IDEA_STATUSES.map((option) => (
-            <Choice
-              key={option.value}
-              type="radio"
-              name="idea_status"
-              value={option.value}
-              label={option.label}
-              checked={ideaStatus === option.value}
-              onChange={() => setIdeaStatus(option.value)}
-            />
+      <Section
+        legend="Where are you?"
+        hint={
+          wantsLocal
+            ? "People who pick Local are matched by country and city or village."
+            : "Your country helps remote partners see roughly where you are."
+        }
+        error={errors.country}
+      >
+        <select
+          name="country"
+          value={country}
+          onChange={(event) => setCountry(event.target.value)}
+          autoComplete="country"
+          className={inputClass}
+          aria-label="Your country"
+        >
+          <option value="">Choose your country…</option>
+          {COUNTRIES.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.name}
+            </option>
           ))}
-        </div>
-        {ideaStatus === "has_idea" && (
+        </select>
+        <input
+          name="city"
+          value={city}
+          onChange={(event) => setCity(event.target.value)}
+          autoComplete="address-level2"
+          placeholder={wantsLocal ? "City or village" : "City or village (optional)"}
+          maxLength={100}
+          className={inputClass}
+          aria-label="Your city or village"
+        />
+        <FieldError message={errors.city} />
+        <input
+          name="district"
+          value={district}
+          onChange={(event) => setDistrict(event.target.value)}
+          placeholder="District or arrondissement (optional)"
+          maxLength={100}
+          className={inputClass}
+          aria-label="Your district or arrondissement"
+        />
+        <FieldError message={errors.district} />
+      </Section>
+
+      <Section
+        legend="Where are you with your idea?"
+        hint="Pick all that fit."
+        error={errors.idea_statuses}
+      >
+        <ChoiceGroup
+          name="idea_statuses"
+          options={IDEA_STATUSES}
+          selected={ideaStatuses}
+          onChange={setIdeaStatuses}
+        />
+        {ideaStatuses.includes("has_idea") && (
           <div className="flex flex-col gap-2">
             <textarea
               name="pitch"
@@ -222,64 +269,38 @@ export function ProfileForm({
         )}
       </Section>
 
-      <Section legend="Hours per week you can commit" error={errors.weekly_hours}>
-        <div className="flex flex-wrap gap-2">
-          {WEEKLY_HOURS.map((option) => (
-            <Choice
-              key={option.value}
-              type="radio"
-              name="weekly_hours"
-              value={option.value}
-              label={option.label}
-              checked={weeklyHours === option.value}
-              onChange={() => setWeeklyHours(option.value)}
-            />
-          ))}
-        </div>
+      <Section
+        legend="Hours per week you can commit"
+        hint="Pick every range that fits, for example if it may grow."
+        error={errors.weekly_hours}
+      >
+        <ChoiceGroup
+          name="weekly_hours"
+          options={WEEKLY_HOURS}
+          selected={weeklyHours}
+          onChange={setWeeklyHours}
+        />
       </Section>
 
       <Section
         legend="Hours per week you'd like a partner to commit"
-        hint="Optional. Full-timers and part-timers can still find each other."
+        hint="Optional. Pick every range you'd be happy with, or leave empty for no preference."
         error={errors.partner_weekly_hours}
       >
-        <div className="flex flex-wrap gap-2">
-          <Choice
-            type="radio"
-            name="partner_weekly_hours"
-            value=""
-            label="No preference"
-            checked={partnerHours === ""}
-            onChange={() => setPartnerHours("")}
-          />
-          {WEEKLY_HOURS.map((option) => (
-            <Choice
-              key={option.value}
-              type="radio"
-              name="partner_weekly_hours"
-              value={option.value}
-              label={option.label}
-              checked={partnerHours === option.value}
-              onChange={() => setPartnerHours(option.value)}
-            />
-          ))}
-        </div>
+        <ChoiceGroup
+          name="partner_weekly_hours"
+          options={WEEKLY_HOURS}
+          selected={partnerHours}
+          onChange={setPartnerHours}
+        />
       </Section>
 
-      <Section legend="How far do you want to take it?" error={errors.ambition}>
-        <div className="flex flex-wrap gap-2">
-          {AMBITIONS.map((option) => (
-            <Choice
-              key={option.value}
-              type="radio"
-              name="ambition"
-              value={option.value}
-              label={option.label}
-              checked={ambition === option.value}
-              onChange={() => setAmbition(option.value)}
-            />
-          ))}
-        </div>
+      <Section
+        legend="How far do you want to take it?"
+        hint="Pick all that fit, for example side income first and full-time later."
+        error={errors.ambitions}
+      >
+        <ChoiceGroup name="ambitions" options={AMBITIONS} selected={ambitions} onChange={setAmbitions} />
       </Section>
 
       <Section legend="Skills you offer" hint="Pick at least one." error={errors.offers}>
@@ -287,7 +308,6 @@ export function ProfileForm({
           {visibleSkills.map((skill) => (
             <Choice
               key={skill.id}
-              type="checkbox"
               name="offers"
               value={skill.id}
               label={skill.name}
@@ -298,16 +318,11 @@ export function ProfileForm({
         </div>
       </Section>
 
-      <Section
-        legend="Skills you're looking for"
-        hint="Optional."
-        error={errors.seeks}
-      >
+      <Section legend="Skills you're looking for" hint="Optional." error={errors.seeks}>
         <div className="flex flex-wrap gap-2">
           {visibleSkills.map((skill) => (
             <Choice
               key={skill.id}
-              type="checkbox"
               name="seeks"
               value={skill.id}
               label={skill.name}
