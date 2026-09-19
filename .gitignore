@@ -42,3 +42,6 @@ next-env.d.ts
 
 # keep the variable-name template committed
 !.env.local.example
+
+# local password notes, never commit
+/Psswrds/
