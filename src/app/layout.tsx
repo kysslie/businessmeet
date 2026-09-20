@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { m } from "@/lib/messages";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,15 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BusinessMeet",
-  description:
-    "Find the right person to start your first small business with. Match on shared interests, skills and the time you can give.",
+  title: m.app.name,
+  description: m.app.description,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang={m.locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

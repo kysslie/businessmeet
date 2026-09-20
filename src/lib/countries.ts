@@ -1,6 +1,9 @@
+import { m } from "@/lib/messages";
+
 // Countries a profile can be in: ISO 3166-1 two-letter codes (249 countries and territories)
 // plus Kosovo (XK), which has no official code but is in everyday use.
-// Names come from the browser/Node's built-in region names, so nothing is typed by hand.
+// Names come from the browser/Node's built-in region names (in the language set in the messages
+// file), so nothing is typed by hand.
 
 export const COUNTRY_CODES = [
   "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT",
@@ -31,7 +34,7 @@ export type CountryCode = (typeof COUNTRY_CODES)[number];
 const codeSet: ReadonlySet<string> = new Set(COUNTRY_CODES);
 export const isCountryCode = (value: string): value is CountryCode => codeSet.has(value);
 
-const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+const regionNames = new Intl.DisplayNames([m.locale], { type: "region" });
 
 export function countryName(code: string | null): string {
   if (!code) return "";
@@ -40,5 +43,5 @@ export function countryName(code: string | null): string {
 
 // [{ code: "FR", name: "France" }, ...] sorted by name, for the country dropdown.
 export const COUNTRIES = COUNTRY_CODES.map((code) => ({ code, name: countryName(code) })).sort(
-  (a, b) => a.name.localeCompare(b.name, "en"),
+  (a, b) => a.name.localeCompare(b.name, m.locale),
 );

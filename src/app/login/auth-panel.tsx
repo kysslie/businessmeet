@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { m } from "@/lib/messages";
 import { MagicLinkForm } from "./login-form";
 import { PasswordForm } from "./password-form";
 
@@ -30,7 +31,7 @@ export function AuthPanel() {
             onClick={() => setMode("login")}
             className={tabClass(mode === "login")}
           >
-            Log in
+            {m.login.tabLogin}
           </button>
           <button
             type="button"
@@ -39,17 +40,14 @@ export function AuthPanel() {
             onClick={() => setMode("signup")}
             className={tabClass(mode === "signup")}
           >
-            Create account
+            {m.login.tabSignup}
           </button>
         </div>
       )}
 
       {mode === "link" ? (
         <>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Forgot your password? We&apos;ll email you a link that logs you in. You can change
-            your password afterwards on your profile page.
-          </p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{m.login.forgotExplain}</p>
           <MagicLinkForm />
         </>
       ) : (
@@ -62,7 +60,7 @@ export function AuthPanel() {
         onClick={() => setMode(mode === "link" ? "login" : "link")}
         className="text-sm text-zinc-500 underline"
       >
-        {mode === "link" ? "← Back to password login" : "Forgot your password? Email me a login link"}
+        {mode === "link" ? m.login.backToPassword : m.login.forgot}
       </button>
     </div>
   );

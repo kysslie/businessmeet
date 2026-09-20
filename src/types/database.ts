@@ -96,26 +96,106 @@ export type Database = {
         }
         Relationships: []
       }
-      matches: {
+      conversation_participants: {
         Row: {
+          conversation_id: string
+          joined_at: string
+          left_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string
+          left_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string
+          left_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          archived_at: string | null
           created_at: string
           id: string
+          type: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          type?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          unmatched_at: string | null
+          unmatched_by: string | null
           user_a: string
           user_b: string
         }
         Insert: {
+          conversation_id: string
           created_at?: string
           id?: string
+          unmatched_at?: string | null
+          unmatched_by?: string | null
           user_a: string
           user_b: string
         }
         Update: {
+          conversation_id?: string
           created_at?: string
           id?: string
+          unmatched_at?: string | null
+          unmatched_by?: string | null
           user_a?: string
           user_b?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "matches_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_unmatched_by_fkey"
+            columns: ["unmatched_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "matches_user_a_fkey"
             columns: ["user_a"]
@@ -135,31 +215,31 @@ export type Database = {
       messages: {
         Row: {
           body: string
+          conversation_id: string
           created_at: string
           id: number
-          match_id: string
           sender_id: string
         }
         Insert: {
           body: string
+          conversation_id: string
           created_at?: string
           id?: never
-          match_id: string
           sender_id: string
         }
         Update: {
           body?: string
+          conversation_id?: string
           created_at?: string
           id?: never
-          match_id?: string
           sender_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "messages_match_id_fkey"
-            columns: ["match_id"]
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
             isOneToOne: false
-            referencedRelation: "matches"
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
           {
@@ -245,9 +325,12 @@ export type Database = {
           district: string | null
           id: string
           idea_statuses: string[] | null
+          is_demo: boolean
+          last_seen_at: string | null
           onboarded: boolean
           partner_weekly_hours: string[] | null
           pitch: string | null
+          postal_code: string | null
           updated_at: string
           weekly_hours: string[] | null
           work_modes: string[] | null
@@ -262,9 +345,12 @@ export type Database = {
           district?: string | null
           id: string
           idea_statuses?: string[] | null
+          is_demo?: boolean
+          last_seen_at?: string | null
           onboarded?: boolean
           partner_weekly_hours?: string[] | null
           pitch?: string | null
+          postal_code?: string | null
           updated_at?: string
           weekly_hours?: string[] | null
           work_modes?: string[] | null
@@ -279,9 +365,12 @@ export type Database = {
           district?: string | null
           id?: string
           idea_statuses?: string[] | null
+          is_demo?: boolean
+          last_seen_at?: string | null
           onboarded?: boolean
           partner_weekly_hours?: string[] | null
           pitch?: string | null
+          postal_code?: string | null
           updated_at?: string
           weekly_hours?: string[] | null
           work_modes?: string[] | null
@@ -400,9 +489,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      metrics_active_profiles: {
+        Row: {
+          active_profiles_30d: number | null
+          region: string | null
+        }
+        Relationships: []
+      }
+      metrics_retention_30d: {
+        Row: {
+          retention_pct: number | null
+          seen_after_30d: number | null
+          signup_week: string | null
+          signup_week_start: string | null
+          signups: number | null
+        }
+        Relationships: []
+      }
+      metrics_weekly_matches: {
+        Row: {
+          iso_week: string | null
+          new_matches: number | null
+          week_start: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      can_write_conversation: { Args: { conv: string }; Returns: boolean }
+      department_of: { Args: { postal_code: string }; Returns: string }
       get_feed: {
         Args: never
         Returns: {
@@ -423,8 +538,16 @@ export type Database = {
           work_modes: string[]
         }[]
       }
+      get_my_postal_code: { Args: never; Returns: string }
+      is_conversation_reader: { Args: { conv: string }; Returns: boolean }
       is_match_partner: { Args: { other_user: string }; Returns: boolean }
+      local_zone: {
+        Args: { city: string; country: string; postal_code: string }
+        Returns: string
+      }
       normalize_place: { Args: { place: string }; Returns: string }
+      touch_last_seen: { Args: never; Returns: undefined }
+      unmatch: { Args: { p_match_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

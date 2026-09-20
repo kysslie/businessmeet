@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { changePassword, type ChangePasswordState } from "@/app/profile/actions";
+import { m } from "@/lib/messages";
 
 const initialState: ChangePasswordState = { status: "idle" };
 
@@ -52,20 +53,20 @@ export function ChangePasswordForm() {
     <form action={formAction} className="flex flex-col gap-4">
       <Field
         id="current_password"
-        label="Current password"
+        label={m.password.current}
         autoComplete="current-password"
         error={errors.current_password}
       />
       <Field
         id="new_password"
-        label="New password"
+        label={m.password.new}
         autoComplete="new-password"
-        hint="At least 8 characters."
+        hint={m.login.passwordHint}
         error={errors.new_password}
       />
       <Field
         id="confirm_password"
-        label="New password again"
+        label={m.password.confirm}
         autoComplete="new-password"
         error={errors.confirm_password}
       />
@@ -79,7 +80,7 @@ export function ChangePasswordForm() {
           className="rounded-xl bg-green-50 p-4 text-sm text-green-800 dark:bg-green-950 dark:text-green-300"
           role="status"
         >
-          Password changed.
+          {m.password.done}
         </p>
       )}
       <button
@@ -87,7 +88,7 @@ export function ChangePasswordForm() {
         disabled={pending}
         className="h-12 rounded-xl border border-zinc-300 px-5 text-base font-medium disabled:opacity-60 dark:border-zinc-700"
       >
-        {pending ? "Changing…" : "Change password"}
+        {pending ? m.password.submitBusy : m.password.submit}
       </button>
     </form>
   );

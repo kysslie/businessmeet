@@ -1,0 +1,297 @@
+// Every piece of text the app shows lives in this one file (French, the only language for the
+// launch). No i18n library: to add English later, write `en.ts` with the same shape (the type
+// `Messages` in index.ts makes the compiler check that nothing is missing) and choose it in
+// index.ts. Nothing else in the app has to change.
+//
+// Texts that need a value are small functions, for example `overlayText: (name) => ...`.
+//
+// The privacy clause and the pricing line are written word for word as decided by Elie
+// (2026-09-20) and are pending legal review (see DEBT-020 in CLAUDE.md).
+
+export const fr = {
+  locale: "fr",
+
+  app: {
+    name: "BusinessMeet",
+    description:
+      "Trouvez la bonne personne pour lancer votre première petite entreprise. Un match selon vos centres d'intérêt, vos compétences et le temps que vous pouvez y consacrer.",
+  },
+
+  landing: {
+    intro:
+      "Vous lancez votre première petite entreprise ? Trouvez la personne avec qui la lancer. Rencontrez des gens qui partagent vos centres d'intérêt, qui ont les compétences qui vous manquent et qui peuvent y consacrer le temps nécessaire.",
+    more:
+      "Services locaux, artisanat et BTP, restauration, e-commerce et bien plus. Que vous ayez une idée ou envie de rejoindre celle d'un autre, que vous préfériez travailler côte à côte ou à distance, vous êtes le bienvenu.",
+    region: "Lancement en Île-de-France. Les profils à distance sont les bienvenus partout.",
+    cta: "Se connecter ou créer un compte",
+    // Elie's wording, word for word. Founding members = the first 100 accounts by creation date.
+    pricing:
+      "Gratuit pendant toute la phase de lancement. Les 100 premiers membres fondateurs recevront 12 mois de Premium offerts lorsque l'offre payante arrivera.",
+  },
+
+  login: {
+    title: "Connexion ou inscription",
+    subtitle:
+      "Utilisez votre adresse e-mail et un mot de passe. Nouveau ici ? Choisissez « Créer un compte ».",
+    linkInvalid:
+      "Ce lien de connexion est invalide ou a expiré. Connectez-vous avec votre mot de passe ou demandez un nouveau lien.",
+    linkOtherBrowser:
+      "Ouvrez le lien de connexion dans le même navigateur que celui où vous l'avez demandé. Demandez un nouveau lien et ouvrez-le dans ce navigateur.",
+    tabLogin: "Se connecter",
+    tabSignup: "Créer un compte",
+    forgot: "Mot de passe oublié ? Recevoir un lien de connexion par e-mail",
+    backToPassword: "← Retour à la connexion par mot de passe",
+    forgotExplain:
+      "Mot de passe oublié ? Nous vous envoyons par e-mail un lien qui vous connecte. Vous pourrez ensuite changer votre mot de passe sur votre page de profil.",
+    email: "Adresse e-mail",
+    emailPlaceholder: "vous@exemple.fr",
+    password: "Mot de passe",
+    passwordHint: "8 caractères minimum.",
+    showPassword: "Afficher le mot de passe",
+    submitLogin: "Se connecter",
+    submitLoginBusy: "Connexion…",
+    submitSignup: "Créer un compte",
+    submitSignupBusy: "Création du compte…",
+    submitLink: "Recevoir un lien de connexion",
+    submitLinkBusy: "Envoi…",
+    checkEmail: "Vérifiez votre e-mail",
+    signupConfirm: (email: string) =>
+      `Nous avons envoyé un lien de confirmation à ${email}. Ouvrez-le dans ce même navigateur pour terminer la création de votre compte, puis connectez-vous.`,
+    linkSent: (email: string) =>
+      `Nous avons envoyé un lien de connexion à ${email}. Ouvrez-le dans ce même navigateur pour vous connecter. Le lien ne fonctionne qu'une fois et expire au bout d'une heure.`,
+    errors: {
+      tooManyAttempts: "Trop de tentatives. Patientez quelques minutes puis réessayez.",
+      emailNotConfirmed:
+        "Veuillez d'abord confirmer votre adresse e-mail (vérifiez votre boîte de réception), puis connectez-vous.",
+      wrongCredentials: "E-mail ou mot de passe incorrect.",
+      alreadyExists: "Un compte existe déjà avec cette adresse. Connectez-vous.",
+      weakPassword: "Ce mot de passe est trop facile à deviner. Essayez-en un plus long.",
+      signupFailed: "Impossible de créer votre compte. Réessayez.",
+      tooManyLinks:
+        "Trop de liens de connexion ont été demandés. Patientez quelques minutes puis réessayez.",
+      linkNotSent: "Impossible d'envoyer l'e-mail. Réessayez.",
+    },
+  },
+
+  validation: {
+    emailTooLong: "Cette adresse e-mail est trop longue.",
+    emailInvalid: "Saisissez une adresse e-mail valide.",
+    passwordRequired: "Saisissez votre mot de passe.",
+    passwordMin: "8 caractères minimum.",
+    passwordMax: "72 caractères maximum.",
+    currentPasswordRequired: "Saisissez votre mot de passe actuel.",
+    passwordsDiffer: "Les deux nouveaux mots de passe ne correspondent pas.",
+    passwordUnchanged: "Choisissez un mot de passe différent de l'actuel.",
+    nameRequired: "Saisissez votre nom.",
+    nameTooLong: (max: number) => `Gardez votre nom sous ${max} caractères.`,
+    cityTooLong: (max: number) => `Gardez la ville sous ${max} caractères.`,
+    districtTooLong: (max: number) => `Gardez le quartier sous ${max} caractères.`,
+    pitchTooLong: (max: number) => `Gardez votre présentation sous ${max} caractères.`,
+    workModesRequired: "Choisissez À distance, Sur place, ou les deux.",
+    countryRequired: "Choisissez votre pays.",
+    ideaRequired: "Choisissez au moins une option.",
+    hoursRequired: "Choisissez au moins une tranche.",
+    ambitionRequired: "Choisissez au moins une option.",
+    categoryRequired: "Choisissez au moins une catégorie.",
+    offersRequired: "Choisissez au moins une compétence que vous apportez.",
+    cityRequiredForLocal:
+      "Saisissez votre ville ou village : la mise en relation sur place se fait par zone.",
+    postalCodeRequiredForLocal:
+      "Saisissez votre code postal (5 chiffres). Il n'est jamais affiché aux autres.",
+    postalCodeFormat: "Le code postal doit comporter exactement 5 chiffres.",
+    pitchRequired: "Rédigez une courte présentation de votre idée.",
+    messageEmpty: "Écrivez un message.",
+    messageTooLong: (max: number) => `Un message ne peut pas dépasser ${max} caractères.`,
+  },
+
+  options: {
+    workModes: { remote: "À distance", local: "Sur place" },
+    ideaStatuses: {
+      has_idea: "J'ai une idée",
+      wants_to_join: "Je veux rejoindre l'idée de quelqu'un",
+      open_to_merge: "Ouvert à fusionner des idées",
+      exploring: "J'explore",
+    },
+    weeklyHours: { lt_5: "Moins de 5", "5_10": "5–10", "10_20": "10–20", "20_plus": "20+" },
+    ambitions: {
+      for_fun: "Projet perso pour le plaisir",
+      side_income: "Revenu complémentaire",
+      full_time: "Viser le temps plein",
+    },
+  },
+
+  common: {
+    back: "← Retour",
+    logout: "Se déconnecter",
+    hoursPerWeek: (hours: string) => `${hours} h/semaine`,
+    deletedUser: "Utilisateur supprimé",
+  },
+
+  pages: {
+    notFoundTitle: "Page introuvable",
+    notFoundText: "Cette page n'existe pas, ou vous n'y avez pas accès.",
+    home: "Retour à l'accueil",
+    errorTitle: "Un problème est survenu",
+    errorText: "Quelque chose s'est mal passé de notre côté. Réessayez dans un instant.",
+    retry: "Réessayer",
+  },
+
+  password: {
+    title: "Mot de passe",
+    current: "Mot de passe actuel",
+    new: "Nouveau mot de passe",
+    confirm: "Nouveau mot de passe (confirmation)",
+    submit: "Changer le mot de passe",
+    submitBusy: "Modification…",
+    done: "Mot de passe modifié.",
+    wrongCurrent: "Ce n'est pas votre mot de passe actuel.",
+    tooManyAttempts: "Trop de tentatives. Patientez quelques minutes puis réessayez.",
+    weak: "Ce mot de passe est trop facile à deviner. Essayez-en un plus long.",
+    same: "Choisissez un mot de passe différent de l'actuel.",
+    failed: "Impossible de changer votre mot de passe. Réessayez.",
+  },
+
+  onboarding: {
+    title: "Créez votre profil",
+    intro:
+      "C'est ce que verront les autres personnes quand vous apparaîtrez dans leur fil. Comptez environ deux minutes.",
+  },
+
+  profile: {
+    title: "Votre profil",
+    loggedInAs: (email: string) => `Connecté en tant que ${email}`,
+    saved: "Enregistré.",
+    form: {
+      name: "Votre nom",
+      categoryLegend: "Quel type d'activité ou de projet ?",
+      categoryHint: "Choisissez tout ce qui vous correspond. Les compétences ci-dessous suivent votre choix.",
+      workLegend: "Comment pouvons-nous travailler ensemble ?",
+      workHint:
+        "Cochez les deux pour toucher le plus de monde. Les personnes qui travaillent à distance sont les bienvenues : si vous avez une activité locale, cochez aussi À distance pour rencontrer des gens qui peuvent vous aider de n'importe où.",
+      whereLegend: "Où êtes-vous ?",
+      whereHintLocal:
+        "Les personnes qui choisissent Sur place sont mises en relation par zone : toute l'Île-de-France forme une seule zone, ailleurs en France on associe par département.",
+      whereHintRemote: "Votre pays permet aux partenaires à distance de vous situer.",
+      countryPlaceholder: "Choisissez votre pays…",
+      countryLabel: "Votre pays",
+      cityLocal: "Ville ou village",
+      cityOptional: "Ville ou village (facultatif)",
+      cityLabel: "Votre ville ou village",
+      districtPlaceholder: "Quartier ou arrondissement (facultatif)",
+      districtLabel: "Votre quartier ou arrondissement",
+      postalCode: "Code postal",
+      postalCodeHint:
+        "Utilisé seulement pour vous mettre en relation par zone. Il n'est jamais affiché aux autres : seule votre ville est visible.",
+      ideaLegend: "Où en êtes-vous avec votre idée ?",
+      ideaHint: "Cochez tout ce qui convient.",
+      pitchPlaceholder: "Présentez votre idée en quelques phrases",
+      pitchLabel: "Votre présentation",
+      hoursLegend: "Heures par semaine que vous pouvez consacrer",
+      hoursHint: "Cochez toutes les tranches qui conviennent, par exemple si cela peut augmenter.",
+      partnerHoursLegend: "Heures par semaine que vous aimeriez qu'un partenaire consacre",
+      partnerHoursHint:
+        "Facultatif. Cochez toutes les tranches qui vous conviendraient, ou laissez vide si cela vous est égal.",
+      ambitionLegend: "Jusqu'où voulez-vous aller ?",
+      ambitionHint: "Cochez tout ce qui convient, par exemple revenu complémentaire d'abord, puis temps plein.",
+      offersLegend: "Compétences que vous apportez",
+      offersHint: "Choisissez-en au moins une. Les compétences affichées suivent les catégories choisies plus haut.",
+      seeksLegend: "Compétences que vous cherchez",
+      seeksHint: "Facultatif.",
+      generalSkills: "Pour toute activité",
+      submitOnboarding: "Terminer mon profil",
+      submitEdit: "Enregistrer les modifications",
+      submitBusy: "Enregistrement…",
+    },
+    photo: {
+      alt: "Votre photo de profil",
+      add: "Ajouter une photo",
+      change: "Changer la photo",
+      remove: "Supprimer la photo",
+      hint: "Facultatif. JPEG, PNG ou WebP.",
+    },
+    errors: {
+      fixFields: "Corrigez les champs signalés.",
+      photoType: "Utilisez une photo JPEG, PNG ou WebP.",
+      photoSize: "Cette photo est trop lourde (2 Mo maximum).",
+      generic: "Impossible d'enregistrer votre profil. Réessayez.",
+      choicesGone: "Certains de vos choix ne sont plus disponibles. Rechargez la page puis réessayez.",
+      photoUpload: "Impossible d'envoyer votre photo. Essayez-en une autre.",
+      photoUploadField: "Échec de l'envoi.",
+      loadFailed: "Impossible de charger votre profil.",
+    },
+  },
+
+  feed: {
+    nav: { matches: "Matchs", profile: "Profil" },
+    caughtUp: "Vous avez tout vu",
+    caughtUpText: "Personne de nouveau pour le moment. De nouvelles personnes apparaîtront au fil des inscriptions.",
+    check: "Voir s'il y a du nouveau",
+    checking: "Vérification…",
+    hint: (left: number) => `Faites glisser la carte, ou utilisez les boutons. ${left} restantes dans ce lot.`,
+    pass: (name: string) => `Passer ${name}`,
+    like: (name: string) => `Aimer ${name}`,
+    likeBadge: "J'AIME",
+    passBadge: "PASSER",
+    matchDialog: "C'est un match",
+    matchTitle: "C'est un match !",
+    matchText: (name: string) => `Vous et ${name} vous êtes mutuellement plu.`,
+    matchOpen: (name: string) => `Ouvrir la conversation avec ${name}`,
+    keepSwiping: "Continuer à parcourir",
+    loadFailed: "Impossible de charger le fil.",
+    errors: {
+      generic: "Un problème est survenu. Réessayez.",
+      loggedOut: "Veuillez vous reconnecter.",
+      notSaved: "Impossible d'enregistrer. Réessayez.",
+    },
+  },
+
+  card: {
+    canCommit: "Peut consacrer",
+    wantsPartnerAt: "Cherche un partenaire à",
+    ambition: "Ambition",
+    into: "Domaines",
+    offers: "Apporte",
+    looking: "Cherche",
+    photoOf: (name: string) => `Photo de ${name}`,
+    someone: "Quelqu'un",
+  },
+
+  matches: {
+    title: "Matchs",
+    back: "Retour au fil",
+    emptyTitle: "Aucun match pour le moment",
+    emptyText: "Quand quelqu'un que vous aimez vous aime aussi, la conversation apparaît ici.",
+    archivedTitle: "Conversations archivées",
+    archivedBadge: "Archivée",
+    noMessages: "Aucun message",
+    loadFailed: "Impossible de charger vos matchs.",
+  },
+
+  chat: {
+    back: "← Matchs",
+    viewProfile: "Voir le profil",
+    placeholder: "Écrire un message…",
+    send: "Envoyer",
+    sending: "Envoi…",
+    empty: "Dites bonjour !",
+    archivedNotice:
+      "Cette conversation est archivée : vous pouvez la relire, mais plus y écrire.",
+    deletedNotice:
+      "Cette personne a supprimé son compte. La conversation est archivée : vous pouvez la relire, mais plus y écrire.",
+    unmatch: "Retirer ce match",
+    unmatchAsk:
+      "Retirer ce match ? La conversation sera archivée en lecture seule pour vous deux. Aucun message n'est supprimé.",
+    unmatchConfirm: "Oui, retirer le match",
+    unmatchCancel: "Annuler",
+    unmatchBusy: "Traitement…",
+    sendFailed: "Message non envoyé. Réessayez.",
+    unmatchFailed: "Impossible de retirer le match. Réessayez.",
+    loadFailed: "Impossible de charger la conversation.",
+  },
+
+  // Word for word, pending legal review (DEBT-020). Shown on the privacy page built in F8.
+  privacy: {
+    acquisitionClause:
+      "En cas de cession, fusion ou acquisition de tout ou partie du service, les données personnelles des utilisateurs pourront être transférées à l'acquéreur, qui sera tenu de respecter la présente politique. Les utilisateurs en seront informés au préalable et pourront supprimer leur compte à tout moment.",
+  },
+};

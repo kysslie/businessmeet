@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FeedDeck } from "@/components/feed-deck";
 import type { FeedCard } from "@/components/profile-card";
+import { m } from "@/lib/messages";
 import { signedPhotoLinks } from "@/lib/photo-links";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../auth/actions";
@@ -24,7 +25,7 @@ export default async function FeedPage() {
   const { data: feed, error } = await supabase.rpc("get_feed");
   if (error) {
     console.error("get_feed failed:", error.code, error.message);
-    throw new Error("Could not load the feed.");
+    throw new Error(m.feed.loadFailed);
   }
 
   // One batch request for every photo link.
@@ -35,7 +36,7 @@ export default async function FeedPage() {
 
   const cards: FeedCard[] = feed.map((person) => ({
     id: person.id,
-    displayName: person.display_name ?? "Someone",
+    displayName: person.display_name ?? m.card.someone,
     avatarUrl: person.avatar_path ? (photoLinks.get(person.avatar_path) ?? null) : null,
     country: person.country,
     city: person.city,
@@ -54,17 +55,17 @@ export default async function FeedPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">BusinessMeet</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{m.app.name}</h1>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/matches" className="underline">
-            Matches
+            {m.feed.nav.matches}
           </Link>
           <Link href="/profile" className="underline">
-            Profile
+            {m.feed.nav.profile}
           </Link>
           <form action={signOut}>
             <button type="submit" className="underline">
-              Log out
+              {m.common.logout}
             </button>
           </form>
         </nav>

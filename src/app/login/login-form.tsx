@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { m } from "@/lib/messages";
 import { requestLoginLink, type LoginState } from "./actions";
 
 const initialState: LoginState = { status: "idle" };
@@ -11,10 +12,9 @@ export function MagicLinkForm() {
   if (state.status === "sent") {
     return (
       <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800" role="status">
-        <p className="font-medium">Check your email</p>
+        <p className="font-medium">{m.login.checkEmail}</p>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          We sent a login link to <strong>{state.email}</strong>. Open it in this same
-          browser to log in. The link works once and expires after an hour.
+          {m.login.linkSent(state.email ?? "")}
         </p>
       </div>
     );
@@ -23,7 +23,7 @@ export function MagicLinkForm() {
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <label htmlFor="email" className="text-sm font-medium">
-        Email address
+        {m.login.email}
       </label>
       <input
         id="email"
@@ -33,7 +33,7 @@ export function MagicLinkForm() {
         autoComplete="email"
         required
         defaultValue={state.email}
-        placeholder="you@example.com"
+        placeholder={m.login.emailPlaceholder}
         className="h-12 rounded-xl border border-zinc-300 bg-transparent px-4 text-base outline-none focus:border-zinc-900 dark:border-zinc-700 dark:focus:border-zinc-100"
       />
       {state.status === "error" && (
@@ -46,7 +46,7 @@ export function MagicLinkForm() {
         disabled={pending}
         className="h-12 rounded-xl bg-foreground px-5 text-base font-medium text-background disabled:opacity-60"
       >
-        {pending ? "Sending…" : "Email me a login link"}
+        {pending ? m.login.submitLinkBusy : m.login.submitLink}
       </button>
     </form>
   );

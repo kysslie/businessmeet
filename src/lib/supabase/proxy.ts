@@ -6,6 +6,20 @@ import type { Database } from "@/types/database";
 const PUBLIC_PATHS = ["/", "/login", "/privacy"];
 const PUBLIC_PREFIXES = ["/auth/"];
 
+// "Last seen" is written at most once an hour per person and browser: a short-lived cookie holds
+// the id of the person it was last done for, so most requests make no database call at all (the
+// database also refuses to update more than once an hour, see touch_last_seen()).
+const SEEN_COOKIE = "bm_seen";
+const SEEN_SECONDS = 60 * 60;
+
+function isPrefetch(request: NextRequest) {
+  return (
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("purpose") === "prefetch" ||
+    request.headers.get("sec-purpose")?.includes("prefetch") === true
+  );
+}
+
 function isPublic(pathname: string) {
   return (
     PUBLIC_PATHS.includes(pathname) ||
@@ -47,11 +61,29 @@ export async function updateSession(request: NextRequest) {
   const loggedIn = Boolean(data?.claims);
   const { pathname } = request.nextUrl;
 
+  // Opening the app counts as being seen (never blocks the page if it fails).
+  const userId = typeof data?.claims?.sub === "string" ? data.claims.sub : null;
+  let markSeen = false;
+  if (userId && !isPrefetch(request) && request.cookies.get(SEEN_COOKIE)?.value !== userId) {
+    const { error } = await supabase.rpc("touch_last_seen");
+    if (error) console.error("touch_last_seen failed:", error.code);
+    else markSeen = true;
+  }
+
   if (!loggedIn && !isPublic(pathname)) {
     return redirectTo(request, "/login", response);
   }
   if (loggedIn && pathname === "/login") {
     return redirectTo(request, "/feed", response);
+  }
+
+  if (markSeen) {
+    response.cookies.set(SEEN_COOKIE, userId ?? "", {
+      maxAge: SEEN_SECONDS,
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
   }
 
   // Must return the response that setAll last built, or refreshed cookies are lost.

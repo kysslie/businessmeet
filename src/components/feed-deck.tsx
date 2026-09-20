@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { recordSwipe } from "@/app/feed/actions";
+import { m } from "@/lib/messages";
 import { ProfileCard, type FeedCard } from "./profile-card";
 
 // How far (in pixels) a card must be dragged sideways to count as a swipe.
@@ -16,7 +17,7 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
   const [checking, startChecking] = useTransition();
   const [dragX, setDragX] = useState(0);
   // Set when a like turns into a match: shows the "It's a match!" screen.
-  const [match, setMatch] = useState<{ id: string; name: string; avatarUrl: string | null } | null>(null);
+  const [match, setMatch] = useState<{ conversationId: string; name: string; avatarUrl: string | null } | null>(null);
   const dragStart = useRef<number | null>(null);
 
   const card = cards[0];
@@ -30,8 +31,8 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
     if (!result.ok) {
       setCards((current) => [card, ...current]);
       setError(result.message);
-    } else if (result.matchId) {
-      setMatch({ id: result.matchId, name: card.displayName, avatarUrl: card.avatarUrl });
+    } else if (result.conversationId) {
+      setMatch({ conversationId: result.conversationId, name: card.displayName, avatarUrl: card.avatarUrl });
     }
   }
 
@@ -57,7 +58,7 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
       role="dialog"
       aria-modal="true"
-      aria-label="It's a match"
+      aria-label={m.feed.matchDialog}
     >
       <div className="flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl bg-background p-8 text-center">
         <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-zinc-200 text-4xl dark:bg-zinc-800">
@@ -69,23 +70,23 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
           )}
         </div>
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">It&apos;s a match!</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{m.feed.matchTitle}</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            You and {match.name} both liked each other.
+            {m.feed.matchText(match.name)}
           </p>
         </div>
         <Link
-          href={`/matches/${match.id}`}
+          href={`/matches/${match.conversationId}`}
           className="flex h-12 w-full items-center justify-center rounded-xl bg-foreground px-5 text-base font-medium text-background"
         >
-          See {match.name}
+          {m.feed.matchOpen(match.name)}
         </Link>
         <button
           type="button"
           onClick={() => setMatch(null)}
           className="h-12 w-full rounded-xl border border-zinc-300 px-5 text-base font-medium dark:border-zinc-700"
         >
-          Keep swiping
+          {m.feed.keepSwiping}
         </button>
       </div>
     </div>
@@ -96,10 +97,8 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
       <>
       {matchScreen}
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
-        <p className="text-lg font-medium">You&apos;re all caught up</p>
-        <p className="text-sm text-zinc-500">
-          No one new to show right now. More people will appear as they join.
-        </p>
+        <p className="text-lg font-medium">{m.feed.caughtUp}</p>
+        <p className="text-sm text-zinc-500">{m.feed.caughtUpText}</p>
         <button
           type="button"
           onClick={() =>
@@ -110,7 +109,7 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
           disabled={checking}
           className="h-12 rounded-xl border border-zinc-300 px-5 text-base font-medium disabled:opacity-60 dark:border-zinc-700"
         >
-          {checking ? "Checking…" : "Check for new people"}
+          {checking ? m.feed.checking : m.feed.check}
         </button>
       </div>
       </>
@@ -137,12 +136,12 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
         <ProfileCard card={card} />
         {dragX > 30 && (
           <span className="absolute left-4 top-4 rounded-lg border-2 border-green-600 px-3 py-1 text-lg font-bold text-green-600">
-            LIKE
+            {m.feed.likeBadge}
           </span>
         )}
         {dragX < -30 && (
           <span className="absolute right-4 top-4 rounded-lg border-2 border-red-600 px-3 py-1 text-lg font-bold text-red-600">
-            PASS
+            {m.feed.passBadge}
           </span>
         )}
       </div>
@@ -160,7 +159,7 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
         <button
           type="button"
           onClick={() => void decide("pass")}
-          aria-label={`Pass on ${card.displayName}`}
+          aria-label={m.feed.pass(card.displayName)}
           className="flex h-16 w-16 items-center justify-center rounded-full border border-zinc-300 text-2xl dark:border-zinc-700"
         >
           ✕
@@ -168,14 +167,14 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
         <button
           type="button"
           onClick={() => void decide("like")}
-          aria-label={`Like ${card.displayName}`}
+          aria-label={m.feed.like(card.displayName)}
           className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-2xl text-background"
         >
           ♥
         </button>
       </div>
       <p className="text-center text-xs text-zinc-500">
-        Swipe the card, or use the buttons. {cards.length} left in this batch.
+        {m.feed.hint(cards.length)}
       </p>
     </div>
   );

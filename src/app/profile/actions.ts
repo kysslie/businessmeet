@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { m } from "@/lib/messages";
 import { createClient } from "@/lib/supabase/server";
 import { changePasswordSchema } from "@/lib/validation/auth";
 import { profileSchema } from "@/lib/validation/profile";
@@ -11,8 +12,6 @@ export type ProfileFormState = {
   message?: string;
   fieldErrors?: Record<string, string>;
 };
-
-const GENERIC_ERROR = "We couldn't save your profile. Please try again.";
 
 const EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -48,6 +47,7 @@ export async function saveProfile(
     country: text("country"),
     city: text("city"),
     district: text("district"),
+    postal_code: text("postal_code"),
     idea_statuses: formData.getAll("idea_statuses"),
     pitch: text("pitch"),
     weekly_hours: formData.getAll("weekly_hours"),
@@ -70,14 +70,14 @@ export async function saveProfile(
   const newAvatar = avatar instanceof File && avatar.size > 0 ? avatar : null;
   if (newAvatar) {
     if (!(AVATAR_TYPES as readonly string[]).includes(newAvatar.type)) {
-      fieldErrors.avatar = "Use a JPEG, PNG or WebP photo.";
+      fieldErrors.avatar = m.profile.errors.photoType;
     } else if (newAvatar.size > AVATAR_MAX_BYTES) {
-      fieldErrors.avatar = "That photo is too large (2 MB maximum).";
+      fieldErrors.avatar = m.profile.errors.photoSize;
     }
   }
 
   if (!parsed.success || Object.keys(fieldErrors).length > 0) {
-    return { status: "error", message: "Please fix the highlighted fields.", fieldErrors };
+    return { status: "error", message: m.profile.errors.fixFields, fieldErrors };
   }
   const input = parsed.data;
 
@@ -100,7 +100,7 @@ export async function saveProfile(
     currentProfile.error
   ) {
     console.error("saveProfile lookup failed");
-    return { status: "error", message: GENERIC_ERROR };
+    return { status: "error", message: m.profile.errors.generic };
   }
 
   const categoryIds = [...new Set(input.category_ids)];
@@ -116,10 +116,7 @@ export async function saveProfile(
     !categoryIds.every((id) => activeCategoryIds.has(id)) ||
     ![...offers, ...seeks].every((id) => allowedSkillIds.has(id))
   ) {
-    return {
-      status: "error",
-      message: "Some of your choices are no longer available. Please reload the page and try again.",
-    };
+    return { status: "error", message: m.profile.errors.choicesGone };
   }
 
   // 3. Categories: add new ones first, then remove old ones.
@@ -181,8 +178,8 @@ export async function saveProfile(
       console.error("photo upload failed:", error.message);
       return {
         status: "error",
-        message: "We couldn't upload your photo. Please try a different one.",
-        fieldErrors: { avatar: "Upload failed." },
+        message: m.profile.errors.photoUpload,
+        fieldErrors: { avatar: m.profile.errors.photoUploadField },
       };
     }
     avatarPath = uploadedPath;
@@ -190,7 +187,10 @@ export async function saveProfile(
     avatarPath = null;
   }
 
-  // 6. The profile itself, last.
+  // 6. The profile itself, last. The postal code is only kept for people who take Local in
+  // France (the form only sends it then); it is never shown to other people.
+  const keepsPostalCode =
+    input.work_modes.includes("local") && input.country === "FR" && input.postal_code !== "";
   const { error: profileError } = await supabase
     .from("profiles")
     .update({
@@ -199,6 +199,7 @@ export async function saveProfile(
       country: input.country,
       city: input.city === "" ? null : input.city,
       district: input.district === "" ? null : input.district,
+      postal_code: keepsPostalCode ? input.postal_code : null,
       idea_statuses: input.idea_statuses,
       pitch: input.idea_statuses.includes("has_idea") ? input.pitch : null,
       weekly_hours: input.weekly_hours,
@@ -225,7 +226,7 @@ export async function saveProfile(
 
 function failed(step: string, error: { code?: string; message: string }): ProfileFormState {
   console.error(`saveProfile failed while ${step}:`, error.code, error.message);
-  return { status: "error", message: GENERIC_ERROR };
+  return { status: "error", message: m.profile.errors.generic };
 }
 
 export type ChangePasswordState = {
@@ -263,21 +264,21 @@ export async function changePassword(
   });
   if (check.error) {
     if (check.error.status === 429) {
-      return { status: "error", message: "Too many attempts. Please wait a few minutes and try again." };
+      return { status: "error", message: m.password.tooManyAttempts };
     }
-    return { status: "error", fieldErrors: { current_password: "That isn't your current password." } };
+    return { status: "error", fieldErrors: { current_password: m.password.wrongCurrent } };
   }
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.new_password });
   if (error) {
     console.error("updateUser(password) failed:", error.status, error.code);
     if (error.code === "weak_password") {
-      return { status: "error", fieldErrors: { new_password: "That password is too easy to guess. Try a longer one." } };
+      return { status: "error", fieldErrors: { new_password: m.password.weak } };
     }
     if (error.code === "same_password") {
-      return { status: "error", fieldErrors: { new_password: "Choose a password different from the current one." } };
+      return { status: "error", fieldErrors: { new_password: m.password.same } };
     }
-    return { status: "error", message: "We couldn't change your password. Please try again." };
+    return { status: "error", message: m.password.failed };
   }
   return { status: "done" };
 }

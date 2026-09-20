@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { m } from "@/lib/messages";
 import {
   signInWithPassword,
   signUpWithPassword,
@@ -24,10 +25,9 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
   if (state.status === "confirm") {
     return (
       <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800" role="status">
-        <p className="font-medium">Check your email</p>
+        <p className="font-medium">{m.login.checkEmail}</p>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          We sent a confirmation link to <strong>{state.email}</strong>. Open it in this same
-          browser to finish creating your account, then log in.
+          {m.login.signupConfirm(state.email ?? "")}
         </p>
       </div>
     );
@@ -37,7 +37,7 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className="text-sm font-medium">
-          Email address
+          {m.login.email}
         </label>
         <input
           id="email"
@@ -47,7 +47,7 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
           autoComplete="email"
           required
           defaultValue={state.email}
-          placeholder="you@example.com"
+          placeholder={m.login.emailPlaceholder}
           className={inputClass}
         />
         {errors.email && (
@@ -59,7 +59,7 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
 
       <div className="flex flex-col gap-2">
         <label htmlFor="password" className="text-sm font-medium">
-          Password
+          {m.login.password}
         </label>
         <input
           id="password"
@@ -70,9 +70,7 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
           minLength={mode === "signup" ? 8 : undefined}
           className={inputClass}
         />
-        {mode === "signup" && (
-          <p className="text-sm text-zinc-500">At least 8 characters.</p>
-        )}
+        {mode === "signup" && <p className="text-sm text-zinc-500">{m.login.passwordHint}</p>}
         {errors.password && (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">
             {errors.password}
@@ -84,7 +82,7 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
             checked={showPassword}
             onChange={(event) => setShowPassword(event.target.checked)}
           />
-          Show password
+          {m.login.showPassword}
         </label>
       </div>
 
@@ -101,11 +99,11 @@ export function PasswordForm({ mode }: { mode: "login" | "signup" }) {
       >
         {pending
           ? mode === "login"
-            ? "Logging in…"
-            : "Creating account…"
+            ? m.login.submitLoginBusy
+            : m.login.submitSignupBusy
           : mode === "login"
-            ? "Log in"
-            : "Create account"}
+            ? m.login.submitLogin
+            : m.login.submitSignup}
       </button>
     </form>
   );

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isCountryCode } from "@/lib/countries";
+import { m } from "@/lib/messages";
 import {
   AMBITIONS,
   CITY_MAX_LENGTH,
@@ -33,44 +34,45 @@ export const profileSchema = z
     display_name: z
       .string()
       .trim()
-      .min(1, "Enter your name.")
-      .max(DISPLAY_NAME_MAX_LENGTH, `Keep your name under ${DISPLAY_NAME_MAX_LENGTH} characters.`),
-    work_modes: pickMany(values(WORK_MODES), "Pick Remote, Local, or both."),
-    country: z
-      .string()
-      .refine(isCountryCode, "Choose your country."),
-    city: z
-      .string()
-      .trim()
-      .max(CITY_MAX_LENGTH, `Keep the city under ${CITY_MAX_LENGTH} characters.`),
+      .min(1, m.validation.nameRequired)
+      .max(DISPLAY_NAME_MAX_LENGTH, m.validation.nameTooLong(DISPLAY_NAME_MAX_LENGTH)),
+    work_modes: pickMany(values(WORK_MODES), m.validation.workModesRequired),
+    country: z.string().refine(isCountryCode, m.validation.countryRequired),
+    city: z.string().trim().max(CITY_MAX_LENGTH, m.validation.cityTooLong(CITY_MAX_LENGTH)),
     district: z
       .string()
       .trim()
-      .max(DISTRICT_MAX_LENGTH, `Keep the district under ${DISTRICT_MAX_LENGTH} characters.`),
-    idea_statuses: pickMany(values(IDEA_STATUSES), "Pick at least one."),
-    pitch: z.string().trim().max(PITCH_MAX_LENGTH, `Keep your pitch under ${PITCH_MAX_LENGTH} characters.`),
-    weekly_hours: pickMany(values(WEEKLY_HOURS), "Pick at least one range."),
+      .max(DISTRICT_MAX_LENGTH, m.validation.districtTooLong(DISTRICT_MAX_LENGTH)),
+    // A French postal code: 5 digits. Never shown to other people; used only for matching zones.
+    postal_code: z
+      .string()
+      .trim()
+      .refine((value) => value === "" || /^[0-9]{5}$/.test(value), m.validation.postalCodeFormat),
+    idea_statuses: pickMany(values(IDEA_STATUSES), m.validation.ideaRequired),
+    pitch: z.string().trim().max(PITCH_MAX_LENGTH, m.validation.pitchTooLong(PITCH_MAX_LENGTH)),
+    weekly_hours: pickMany(values(WEEKLY_HOURS), m.validation.hoursRequired),
     // Optional: an empty list means "no preference".
     partner_weekly_hours: pickMany(values(WEEKLY_HOURS)),
-    ambitions: pickMany(values(AMBITIONS), "Pick at least one."),
-    category_ids: idList.pipe(z.array(z.number()).min(1, "Pick at least one category.")),
-    offers: idList.pipe(z.array(z.number()).min(1, "Pick at least one skill you offer.")),
+    ambitions: pickMany(values(AMBITIONS), m.validation.ambitionRequired),
+    category_ids: idList.pipe(z.array(z.number()).min(1, m.validation.categoryRequired)),
+    offers: idList.pipe(z.array(z.number()).min(1, m.validation.offersRequired)),
     seeks: idList,
   })
   .superRefine((profile, ctx) => {
-    if (profile.work_modes.includes("local") && profile.city === "") {
+    const wantsLocal = profile.work_modes.includes("local");
+    if (wantsLocal && profile.city === "") {
+      ctx.addIssue({ code: "custom", path: ["city"], message: m.validation.cityRequiredForLocal });
+    }
+    // Local people in France are matched by zone, which needs the postal code.
+    if (wantsLocal && profile.country === "FR" && profile.postal_code === "") {
       ctx.addIssue({
         code: "custom",
-        path: ["city"],
-        message: "Enter your city or village. Local matches are by place.",
+        path: ["postal_code"],
+        message: m.validation.postalCodeRequiredForLocal,
       });
     }
     if (profile.idea_statuses.includes("has_idea") && profile.pitch === "") {
-      ctx.addIssue({
-        code: "custom",
-        path: ["pitch"],
-        message: "Write a short pitch for your idea.",
-      });
+      ctx.addIssue({ code: "custom", path: ["pitch"], message: m.validation.pitchRequired });
     }
   });
 

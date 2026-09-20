@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { m } from "@/lib/messages";
 import { AVATAR_TYPES } from "@/lib/profile-options";
 
 const MAX_SIDE = 800;
@@ -63,7 +64,7 @@ export function PhotoField({
         {shown ? (
           // A plain <img>: the address is a short-lived signed link, not a fixed image.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={shown} alt="Your profile photo" className="h-full w-full object-cover" />
+          <img src={shown} alt={m.profile.photo.alt} className="h-full w-full object-cover" />
         ) : (
           <span aria-hidden="true">🙂</span>
         )}
@@ -83,7 +84,7 @@ export function PhotoField({
           onClick={() => inputRef.current?.click()}
           className="h-10 rounded-xl border border-zinc-300 px-4 text-sm font-medium dark:border-zinc-700"
         >
-          {shown ? "Change photo" : "Add a photo"}
+          {shown ? m.profile.photo.change : m.profile.photo.add}
         </button>
         {(currentUrl || preview) && !remove && (
           <button
@@ -95,11 +96,11 @@ export function PhotoField({
             }}
             className="text-left text-sm text-zinc-500 underline"
           >
-            Remove photo
+            {m.profile.photo.remove}
           </button>
         )}
         {remove && <input type="hidden" name="remove_avatar" value="on" />}
-        <p className="text-xs text-zinc-500">Optional. JPEG, PNG or WebP.</p>
+        <p className="text-xs text-zinc-500">{m.profile.photo.hint}</p>
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">
             {error}

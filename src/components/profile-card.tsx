@@ -1,4 +1,5 @@
 import { countryName } from "@/lib/countries";
+import { m } from "@/lib/messages";
 import {
   AMBITIONS,
   IDEA_STATUSES,
@@ -50,7 +51,7 @@ function Chips({ title, items }: { title: string; items: string[] }) {
 export function ProfileCard({ card }: { card: FeedCard }) {
   const workModes = labelsFor(WORK_MODES, card.workModes).join(" · ");
   const place = [card.district, card.city, countryName(card.country)].filter(Boolean).join(", ");
-  const hours = (list: string[]) => `${labelsFor(WEEKLY_HOURS, list).join(", ")} h/week`;
+  const hours = (list: string[]) => m.common.hoursPerWeek(labelsFor(WEEKLY_HOURS, list).join(", "));
   return (
     <>
       <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-zinc-200 text-6xl text-zinc-400 dark:bg-zinc-800">
@@ -59,7 +60,7 @@ export function ProfileCard({ card }: { card: FeedCard }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={card.avatarUrl}
-            alt={`Photo of ${card.displayName}`}
+            alt={m.card.photoOf(card.displayName)}
             draggable={false}
             className="h-full w-full object-cover"
           />
@@ -81,23 +82,23 @@ export function ProfileCard({ card }: { card: FeedCard }) {
         </div>
         <dl className="grid grid-cols-1 gap-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">Can commit</dt>
+            <dt className="text-zinc-500">{m.card.canCommit}</dt>
             <dd className="text-right">{hours(card.weeklyHours)}</dd>
           </div>
           {card.partnerWeeklyHours.length > 0 && (
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500">Wants a partner at</dt>
+              <dt className="text-zinc-500">{m.card.wantsPartnerAt}</dt>
               <dd className="text-right">{hours(card.partnerWeeklyHours)}</dd>
             </div>
           )}
           <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">Ambition</dt>
+            <dt className="text-zinc-500">{m.card.ambition}</dt>
             <dd className="text-right">{labelsFor(AMBITIONS, card.ambitions).join(" · ")}</dd>
           </div>
         </dl>
-        <Chips title="Into" items={card.categories} />
-        <Chips title="Offers" items={card.offers} />
-        <Chips title="Looking for" items={card.seeks} />
+        <Chips title={m.card.into} items={card.categories} />
+        <Chips title={m.card.offers} items={card.offers} />
+        <Chips title={m.card.looking} items={card.seeks} />
       </div>
     </>
   );

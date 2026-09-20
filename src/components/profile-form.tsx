@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { saveProfile, type ProfileFormState } from "@/app/profile/actions";
 import { COUNTRIES } from "@/lib/countries";
+import { m } from "@/lib/messages";
 import type { ProfileFormData } from "@/lib/profile-data";
 import {
   AMBITIONS,
@@ -167,6 +168,7 @@ export function ProfileForm({
   const [country, setCountry] = useState(profile.country ?? "");
   const [city, setCity] = useState(profile.city ?? "");
   const [district, setDistrict] = useState(profile.district ?? "");
+  const [postalCode, setPostalCode] = useState(data.postalCode);
   const [ideaStatuses, setIdeaStatuses] = useState<string[]>(profile.idea_statuses ?? []);
   const [pitch, setPitch] = useState(profile.pitch ?? "");
   const [weeklyHours, setWeeklyHours] = useState<string[]>(profile.weekly_hours ?? []);
@@ -182,7 +184,7 @@ export function ProfileForm({
   );
   const visibleIds = new Set(visibleSkills.map((skill) => skill.id));
   const skillGroups: SkillGroup[] = [
-    { title: "For any business", skills: visibleSkills.filter((skill) => skill.category_id === null) },
+    { title: m.profile.form.generalSkills, skills: visibleSkills.filter((skill) => skill.category_id === null) },
     ...categories
       .filter((category) => categoryIds.includes(category.id))
       .map((category) => ({
@@ -192,12 +194,13 @@ export function ProfileForm({
   ].filter((group) => group.skills.length > 0);
   const onlyOneCategory = categories.length === 1;
   const wantsLocal = workModes.includes("local");
+  const needsPostalCode = wantsLocal && country === "FR";
 
   return (
     <form action={formAction} className="flex flex-col gap-8">
       <PhotoField currentUrl={avatarUrl} error={errors.avatar} />
 
-      <Section legend="Your name" error={errors.display_name}>
+      <Section legend={m.profile.form.name} error={errors.display_name}>
         <input
           name="display_name"
           value={displayName}
@@ -205,7 +208,7 @@ export function ProfileForm({
           autoComplete="given-name"
           maxLength={50}
           className={inputClass}
-          aria-label="Your name"
+          aria-label={m.profile.form.name}
         />
       </Section>
 
@@ -214,8 +217,8 @@ export function ProfileForm({
         <input type="hidden" name="category_ids" value={categories[0].id} />
       ) : (
         <Section
-          legend="What kind of business or project?"
-          hint="Pick all that fit. The skills below follow your choice."
+          legend={m.profile.form.categoryLegend}
+          hint={m.profile.form.categoryHint}
           error={errors.category_ids}
         >
           <div className="flex flex-wrap gap-2">
@@ -234,20 +237,16 @@ export function ProfileForm({
       )}
 
       <Section
-        legend="How can you work together?"
-        hint="Pick both to reach the most people. Remote helpers are welcome: if you run a local business, tick Remote too to meet people who can help from anywhere."
+        legend={m.profile.form.workLegend}
+        hint={m.profile.form.workHint}
         error={errors.work_modes}
       >
         <ChoiceGroup name="work_modes" options={WORK_MODES} selected={workModes} onChange={setWorkModes} />
       </Section>
 
       <Section
-        legend="Where are you?"
-        hint={
-          wantsLocal
-            ? "People who pick Local are matched by country and city or village."
-            : "Your country helps remote partners see roughly where you are."
-        }
+        legend={m.profile.form.whereLegend}
+        hint={wantsLocal ? m.profile.form.whereHintLocal : m.profile.form.whereHintRemote}
         error={errors.country}
       >
         <select
@@ -256,9 +255,9 @@ export function ProfileForm({
           onChange={(event) => setCountry(event.target.value)}
           autoComplete="country"
           className={inputClass}
-          aria-label="Your country"
+          aria-label={m.profile.form.countryLabel}
         >
-          <option value="">Choose your country…</option>
+          <option value="">{m.profile.form.countryPlaceholder}</option>
           {COUNTRIES.map((option) => (
             <option key={option.code} value={option.code}>
               {option.name}
@@ -270,27 +269,45 @@ export function ProfileForm({
           value={city}
           onChange={(event) => setCity(event.target.value)}
           autoComplete="address-level2"
-          placeholder={wantsLocal ? "City or village" : "City or village (optional)"}
+          placeholder={wantsLocal ? m.profile.form.cityLocal : m.profile.form.cityOptional}
           maxLength={100}
           className={inputClass}
-          aria-label="Your city or village"
+          aria-label={m.profile.form.cityLabel}
         />
         <FieldError message={errors.city} />
         <input
           name="district"
           value={district}
           onChange={(event) => setDistrict(event.target.value)}
-          placeholder="District or arrondissement (optional)"
+          placeholder={m.profile.form.districtPlaceholder}
           maxLength={100}
           className={inputClass}
-          aria-label="Your district or arrondissement"
+          aria-label={m.profile.form.districtLabel}
         />
         <FieldError message={errors.district} />
+        {needsPostalCode && (
+          <div className="flex flex-col gap-2">
+            <input
+              name="postal_code"
+              value={postalCode}
+              onChange={(event) => setPostalCode(event.target.value)}
+              inputMode="numeric"
+              autoComplete="postal-code"
+              pattern="[0-9]{5}"
+              maxLength={5}
+              placeholder={m.profile.form.postalCode}
+              className={inputClass}
+              aria-label={m.profile.form.postalCode}
+            />
+            <p className="text-sm text-zinc-500">{m.profile.form.postalCodeHint}</p>
+            <FieldError message={errors.postal_code} />
+          </div>
+        )}
       </Section>
 
       <Section
-        legend="Where are you with your idea?"
-        hint="Pick all that fit."
+        legend={m.profile.form.ideaLegend}
+        hint={m.profile.form.ideaHint}
         error={errors.idea_statuses}
       >
         <ChoiceGroup
@@ -307,9 +324,9 @@ export function ProfileForm({
               onChange={(event) => setPitch(event.target.value)}
               rows={4}
               maxLength={PITCH_MAX_LENGTH}
-              placeholder="Pitch your idea in a few sentences"
+              placeholder={m.profile.form.pitchPlaceholder}
               className="w-full rounded-xl border border-zinc-300 bg-transparent p-4 text-base outline-none focus:border-zinc-900 dark:border-zinc-700 dark:focus:border-zinc-100"
-              aria-label="Your pitch"
+              aria-label={m.profile.form.pitchLabel}
             />
             <p className="text-right text-xs text-zinc-500">
               {pitch.length}/{PITCH_MAX_LENGTH}
@@ -320,8 +337,8 @@ export function ProfileForm({
       </Section>
 
       <Section
-        legend="Hours per week you can commit"
-        hint="Pick every range that fits, for example if it may grow."
+        legend={m.profile.form.hoursLegend}
+        hint={m.profile.form.hoursHint}
         error={errors.weekly_hours}
       >
         <ChoiceGroup
@@ -333,8 +350,8 @@ export function ProfileForm({
       </Section>
 
       <Section
-        legend="Hours per week you'd like a partner to commit"
-        hint="Optional. Pick every range you'd be happy with, or leave empty for no preference."
+        legend={m.profile.form.partnerHoursLegend}
+        hint={m.profile.form.partnerHoursHint}
         error={errors.partner_weekly_hours}
       >
         <ChoiceGroup
@@ -346,16 +363,16 @@ export function ProfileForm({
       </Section>
 
       <Section
-        legend="How far do you want to take it?"
-        hint="Pick all that fit, for example side income first and full-time later."
+        legend={m.profile.form.ambitionLegend}
+        hint={m.profile.form.ambitionHint}
         error={errors.ambitions}
       >
         <ChoiceGroup name="ambitions" options={AMBITIONS} selected={ambitions} onChange={setAmbitions} />
       </Section>
 
       <Section
-        legend="Skills you offer"
-        hint="Pick at least one. The skills shown follow the categories you chose above."
+        legend={m.profile.form.offersLegend}
+        hint={m.profile.form.offersHint}
         error={errors.offers}
       >
         <SkillPicker
@@ -366,7 +383,7 @@ export function ProfileForm({
         />
       </Section>
 
-      <Section legend="Skills you're looking for" hint="Optional." error={errors.seeks}>
+      <Section legend={m.profile.form.seeksLegend} hint={m.profile.form.seeksHint} error={errors.seeks}>
         <SkillPicker
           name="seeks"
           groups={skillGroups}
@@ -389,7 +406,11 @@ export function ProfileForm({
         disabled={pending}
         className="h-12 rounded-xl bg-foreground px-5 text-base font-medium text-background disabled:opacity-60"
       >
-        {pending ? "Saving…" : mode === "onboarding" ? "Finish profile" : "Save changes"}
+        {pending
+          ? m.profile.form.submitBusy
+          : mode === "onboarding"
+            ? m.profile.form.submitOnboarding
+            : m.profile.form.submitEdit}
       </button>
     </form>
   );

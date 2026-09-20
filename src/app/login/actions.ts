@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { m } from "@/lib/messages";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, passwordLoginSchema, signUpSchema } from "@/lib/validation/auth";
 
@@ -18,7 +19,7 @@ export type PasswordFormState = {
   email?: string;
 };
 
-const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
+const TOO_MANY_ATTEMPTS = m.login.errors.tooManyAttempts;
 
 function fieldErrorsFrom(issues: { path: PropertyKey[]; message: string }[]) {
   const fieldErrors: Record<string, string> = {};
@@ -49,11 +50,11 @@ export async function signInWithPassword(
       return {
         status: "error",
         email,
-        message: "Please confirm your email address first (check your inbox), then log in.",
+        message: m.login.errors.emailNotConfirmed,
       };
     }
     // Same message for a wrong password and an unknown email, so nobody can probe for accounts.
-    return { status: "error", email, message: "Email or password is incorrect." };
+    return { status: "error", email, message: m.login.errors.wrongCredentials };
   }
 
   redirect("/feed");
@@ -84,13 +85,13 @@ export async function signUpWithPassword(
   if (error) {
     console.error("signUp failed:", error.status, error.code);
     if (error.code === "user_already_exists") {
-      return { status: "error", email, message: "An account with this email already exists. Log in instead." };
+      return { status: "error", email, message: m.login.errors.alreadyExists };
     }
     if (error.code === "weak_password") {
-      return { status: "error", email, fieldErrors: { password: "That password is too easy to guess. Try a longer one." } };
+      return { status: "error", email, fieldErrors: { password: m.login.errors.weakPassword } };
     }
     if (error.status === 429) return { status: "error", email, message: TOO_MANY_ATTEMPTS };
-    return { status: "error", email, message: "We couldn't create your account. Please try again." };
+    return { status: "error", email, message: m.login.errors.signupFailed };
   }
 
   if (data.session) redirect("/feed");
@@ -131,10 +132,10 @@ export async function requestLoginLink(
       return {
         status: "error",
         email,
-        message: "Too many login emails were requested. Please wait a few minutes and try again.",
+        message: m.login.errors.tooManyLinks,
       };
     }
-    return { status: "error", email, message: "We couldn't send the email. Please try again." };
+    return { status: "error", email, message: m.login.errors.linkNotSent };
   }
 
   return { status: "sent", email };
