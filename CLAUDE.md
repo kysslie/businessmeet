@@ -297,7 +297,9 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 - Profile redesign and audience pivot (validated by Elie 2026-09-20: "Test is validated"; he did not itemise, and the database backs it for John's account, which finished the new form and picked the new categories). Elie's own account is still not onboarded (no country), so it does not appear in feeds yet.
 
-**In progress:** F5 — Mutual-match trigger and matches list. Built and applied 2026-09-19 (migration `20260919200000_mutual_match_trigger.sql`); RLS/match test script 166/166 (20 new match checks, and the tests now ignore real data); browser-tested by me with three throwaway users (deleted): a one-sided like makes no match, the second like shows "It's a match!", both people see the match in `/matches` and can open `/matches/[id]` (the other person's full profile), an outsider sees no matches and gets 404 on the match page. NOT yet confirmed by Elie. The match page has a placeholder where F6 puts the chat.
+- F5 — Mutual-match trigger and matches list (validated by Elie 2026-09-21: "matched and sent a message, it's all good"). Database evidence: John (liked Marco Demo earlier) and Marco Demo matched at 20:21 UTC on 2026-09-21 and one message was sent from Marco's side. Built with migration `20260919200000_mutual_match_trigger.sql`, then rebuilt on conversations on 2026-09-20. **Not yet confirmed by him:** receiving the message on the other side, live delivery in two windows, unmatch, phone layout (all on his list below).
+
+**In progress:** none yet. F7 (block and report) is about to start (Elie, 2026-09-21: "let's go to the next step"). Also waiting on Elie: his yes on the French category migration (`supabase/proposed/`).
 
 **Also built on 2026-09-20 after Elie's answers, tested by me and NOT yet confirmed by him:** (1) French-only UI with one messages file; (2) postal code + Île-de-France zone matching (migration `20260920100000`); (3) chat on conversations, live messages, unmatch, "Utilisateur supprimé" (migration `20260920110000`); (4) launch metrics: `last_seen_at` (hourly), `is_demo`, 3 views, backfill of the 4 accounts (migration `20260920120000`); (5) private columns (migration `20260920130000`, applied after the new code was live); (6) landing page pricing line with **100** founding members, French not-found and error pages. Security/feed/chat/metrics test script: 253/253. Browser-tested by me with throwaway users (deleted): French onboarding with the postal-code rules, feed zones, mutual match, live delivery of a message sent from another connection, unmatch (chat archived, nothing deleted), deleted-account display, last-seen throttle; production smoke test (login, feed, profile, matches, French 404). NOT done: the French category/skill data (waiting for Elie), the privacy page (F8).
 
@@ -335,18 +337,22 @@ Notes for later features:
 - F8: deleting an auth user does NOT delete Storage files. The delete-account code must first remove everything under `avatars/{user_id}/` (with the secret key), then delete the user. Add a test.
 - F6: the plain Node 20 runtime has no built-in WebSocket; Next.js/Vercel handle it, but check realtime works in local dev on Node 20.
 
-**Pending tests for Elie** (a feature is only complete when he confirms it). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`.
-Waived by Elie on 2026-09-19 (not to be re-asked unless he raises them): photo upload from his phone and the F3/F4 phone layout checks. They remain untested by him.
-Still unconfirmed:
-- Profile redesign, Elie's own account: still to finish the new form (pick a country) so it appears in feeds and can match. John's account is done.
-- Audience pivot: validated (see Completed features). Only the phone layout of the new form and landing page is unchecked.
-- French UI, postal code and matching zones (built 2026-09-20, tested only by me): every screen is in French; Local + France asks for a 5-digit postal code, which is never shown to others (cards show the city); two Local people in Île-de-France (say Paris and Boulogne) see each other; two Local people elsewhere in France see each other only in the same department; the city and district still show on the card.
-- Chat and unmatch (built 2026-09-20, tested only by me): liking each other opens "C'est un match !" and the conversation; messages appear live in a second window (use a private window for the second account); "Retirer ce match" asks first, then archives the chat read-only for both, nothing deleted; the archived chat sits under "Conversations archivées"; after the other person deletes their account it shows "Utilisateur supprimé". Phone layout unchecked.
-- Launch metrics: run the three SQL lines above in the Supabase SQL editor and check the numbers look right for the real accounts.
-- Landing page: the French text and the founding-members line (100). Phone layout unchecked.
-- F2 leftovers: opening an email login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link; the "Forgot your password?" email link.
-- F4 leftover: drag-to-swipe on a real phone (waived, see above).
-- F5 (mutual matches): NOT yet confirmed; no match exists between real accounts (0 matches on 2026-09-20). Test with the demo accounts below: after Elie's account finishes its profile, liking **Ana Demo** shows "It's a match!" at once (Ana already liked both real accounts); liking **Marco Demo** shows no match until Marco (log in as Marco) likes back. `/matches` lists matches on both sides (use a private window for the second account). Phone layout of the overlay, list and match page unchecked by me.
+**Pending tests for Elie** (a feature is only complete when he confirms it; Elie said on 2026-09-21 he will do these later). Mirrored in Claude's memory file `project_pending-tests-for-elie.md`. Tick each one here when he confirms it.
+Waived by Elie on 2026-09-19 (not to be re-asked unless he raises them): photo upload from his phone and the F3/F4 phone layout checks.
+
+Confirmed so far: F0 to F4, password login, profile redesign, audience pivot (see Completed features); on 2026-09-21 the mutual match between John and Marco Demo and sending a message.
+
+To do, in this order (demo logins: Ana and Marco were given to Elie in chat):
+1. **Chat, both sides and live.** Open the John–Marco conversation in two windows (a private window for the second account). Write from each side: the message must appear in the other window without reloading; the "Matchs" list shows the conversation.
+2. **Unmatch.** In the conversation press "Retirer ce match", first Annuler (nothing changes), then confirm: the chat becomes read-only for both, nothing is deleted, and it moves to "Conversations archivées".
+3. **Elie's own account** (khoury.elie@live.com): still not onboarded. Log in, finish the profile (pick a country, and a postal code if Sur place + France). Then Ana Demo (who already liked it) gives an instant match.
+4. **Postal code and zones.** Two accounts set to "Sur place" in France, for example 75011 and 92100: they see each other. Elsewhere in France they match only in the same department. The postal code is never shown, only the city.
+5. **Launch metrics.** In the Supabase SQL editor run the three lines from "Metrics: how Elie reads them" above and check the numbers.
+6. **Landing page and French text**: the French text, the "100 premiers membres fondateurs" line, and that no English text remains except category and skill names (DEBT-024, until the French data migration is applied).
+7. **Phone layout** of everything new (French screens, form, chat, match screen).
+8. **F2 leftovers:** opening an email login link in a different browser (expects the "same browser" message); whether Outlook link scanning uses up the link; the "Forgot your password?" email link.
+9. **Drag-to-swipe on a phone** (waived, only if he wants it).
+10. New items get added here when F7 ships (block and report).
 
 **Demo accounts** (created 2026-09-20 at Elie's request, through the real sign-up path, so he can see cards, skills and matching while testing; logins were given to him in chat only, never stored in files):
 - `demo.ana@demo.invalid` "Ana Demo": Lyon (Part-Dieu), France; Remote + Local; all 7 categories; all 4 idea options with a pitch (bakery + repair service); 3 hour ranges, 2 partner ranges, all 3 ambitions; offers 12 skills, seeks 6; has a photo. **Has already liked both real accounts** (Elie and John), so liking her back gives an instant match.
