@@ -20,11 +20,16 @@ export function Chat({
   meId,
   initialMessages,
   notice,
+  senderNames,
+  emptyText,
 }: {
   conversationId: string;
   meId: string;
   initialMessages: ChatMessage[];
   notice: string | null;
+  // Set in group chats: who wrote each message (by user id). Unknown senders show as a generic name.
+  senderNames?: Record<string, string>;
+  emptyText?: string;
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [draft, setDraft] = useState("");
@@ -78,12 +83,20 @@ export function Chat({
     <div className="flex flex-1 flex-col gap-4">
       <ul className="flex flex-1 flex-col gap-2" aria-live="polite">
         {messages.length === 0 && (
-          <li className="py-8 text-center text-sm text-zinc-500">{m.chat.empty}</li>
+          <li className="py-8 text-center text-sm text-zinc-500">{emptyText ?? m.chat.empty}</li>
         )}
         {messages.map((message) => {
           const mine = message.sender_id === meId;
           return (
-            <li key={message.id} className={mine ? "flex justify-end" : "flex justify-start"}>
+            <li
+              key={message.id}
+              className={"flex flex-col gap-1 " + (mine ? "items-end" : "items-start")}
+            >
+              {senderNames && !mine && (
+                <span className="px-2 text-xs text-zinc-500">
+                  {senderNames[message.sender_id] ?? m.parcours.someone}
+                </span>
+              )}
               <p
                 className={
                   "max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2 text-base " +

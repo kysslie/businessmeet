@@ -153,6 +153,151 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_links: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: number
+          journey_id: string
+          kind: string
+          title: string
+          url: string
+          visibility: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: never
+          journey_id: string
+          kind: string
+          title: string
+          url: string
+          visibility?: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: never
+          journey_id?: string
+          kind?: string
+          title?: string
+          url?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_links_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_links_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_members: {
+        Row: {
+          created_at: string
+          invited_by: string | null
+          joined_at: string | null
+          journey_id: string
+          left_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          journey_id: string
+          left_at?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          journey_id?: string
+          left_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_members_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_members_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journeys: {
+        Row: {
+          archived_at: string | null
+          conversation_id: string
+          created_at: string
+          created_by: string | null
+          goal: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          archived_at?: string | null
+          conversation_id: string
+          created_at?: string
+          created_by?: string | null
+          goal?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          archived_at?: string | null
+          conversation_id?: string
+          created_at?: string
+          created_by?: string | null
+          goal?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journeys_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journeys_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           conversation_id: string
@@ -546,6 +691,10 @@ export type Database = {
       }
     }
     Functions: {
+      archive_journey_if_too_small: {
+        Args: { p_journey_id: string }
+        Returns: undefined
+      }
       can_write_conversation: { Args: { conv: string }; Returns: boolean }
       department_of: { Args: { postal_code: string }; Returns: string }
       get_blocked_profiles: {
@@ -578,13 +727,29 @@ export type Database = {
         }[]
       }
       get_my_postal_code: { Args: never; Returns: string }
+      invite_to_journey: {
+        Args: { p_journey_id: string; p_user_id: string }
+        Returns: undefined
+      }
       is_conversation_reader: { Args: { conv: string }; Returns: boolean }
+      is_journey_invitee: { Args: { j: string }; Returns: boolean }
+      is_journey_member: { Args: { j: string }; Returns: boolean }
       is_match_partner: { Args: { other_user: string }; Returns: boolean }
+      is_open_journey_member: { Args: { j: string }; Returns: boolean }
+      leave_journey: { Args: { p_journey_id: string }; Returns: undefined }
       local_zone: {
         Args: { city: string; country: string; postal_code: string }
         Returns: string
       }
       normalize_place: { Args: { place: string }; Returns: string }
+      respond_to_journey_invite: {
+        Args: { p_accept: boolean; p_journey_id: string }
+        Returns: undefined
+      }
+      start_journey: {
+        Args: { p_goal: string; p_match_id: string; p_name: string }
+        Returns: string
+      }
       touch_last_seen: { Args: never; Returns: undefined }
       unmatch: { Args: { p_match_id: string }; Returns: undefined }
     }

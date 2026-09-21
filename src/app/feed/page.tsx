@@ -60,6 +60,9 @@ export default async function FeedPage() {
           <Link href="/matches" className="underline">
             {m.feed.nav.matches}
           </Link>
+          <Link href="/journeys" className="underline">
+            {m.feed.nav.parcours}
+          </Link>
           <Link href="/profile" className="underline">
             {m.feed.nav.profile}
           </Link>
