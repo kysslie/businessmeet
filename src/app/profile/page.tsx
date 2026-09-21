@@ -18,6 +18,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           {m.common.back}
         </Link>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">{m.profile.title}</h1>
+        <Link href="/settings" className="mt-2 inline-block text-sm underline">
+          {m.settings.link}
+        </Link>
         {data.email && <p className="mt-1 text-sm text-zinc-500">{m.profile.loggedInAs(data.email)}</p>}
       </div>
       {saved && (

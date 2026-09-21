@@ -489,6 +489,36 @@ export type Database = {
       }
     }
     Views: {
+      admin_reports: {
+        Row: {
+          created_at: string | null
+          details: string | null
+          id: number | null
+          reason: string | null
+          reported_email: string | null
+          reported_id: string | null
+          reported_name: string | null
+          reporter_email: string | null
+          reporter_id: string | null
+          reporter_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics_active_profiles: {
         Row: {
           active_profiles_30d: number | null
@@ -518,6 +548,15 @@ export type Database = {
     Functions: {
       can_write_conversation: { Args: { conv: string }; Returns: boolean }
       department_of: { Args: { postal_code: string }; Returns: string }
+      get_blocked_profiles: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          blocked_at: string
+          display_name: string
+          id: string
+        }[]
+      }
       get_feed: {
         Args: never
         Returns: {

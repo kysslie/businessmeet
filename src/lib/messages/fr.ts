@@ -289,6 +289,54 @@ export const fr = {
     loadFailed: "Impossible de charger la conversation.",
   },
 
+  safety: {
+    menu: "Plus d'options",
+    report: "Signaler ce profil",
+    block: "Bloquer ce profil",
+    cancel: "Annuler",
+    blockAsk: (name: string) =>
+      `Bloquer ${name} ? Vous ne vous verrez plus, ni dans le fil ni dans vos matchs, et aucune conversation ne sera possible. La personne n'en est pas informée.`,
+    blockConfirm: "Oui, bloquer",
+    blockBusy: "Blocage…",
+    blocked: "Profil bloqué.",
+    reportTitle: (name: string) => `Signaler ${name}`,
+    reasonLabel: "Motif",
+    detailsLabel: "Détails (facultatif)",
+    detailsPlaceholder: "Dites-nous ce qui s'est passé",
+    reportSend: "Envoyer le signalement",
+    reportBusy: "Envoi…",
+    reported: "Merci, votre signalement a été envoyé. Nous l'examinerons.",
+    reportedThenBlock: "Vous pouvez aussi bloquer cette personne.",
+    reasons: {
+      fake_profile: "Faux profil ou arnaque",
+      harassment: "Harcèlement ou comportement déplacé",
+      inappropriate: "Contenu choquant ou inapproprié",
+      spam: "Spam ou démarchage",
+      underage: "Personne mineure",
+      other: "Autre",
+    },
+    errors: {
+      reasonRequired: "Choisissez un motif.",
+      detailsTooLong: (max: number) => `Les détails ne peuvent pas dépasser ${max} caractères.`,
+      reportFailed: "Impossible d'envoyer le signalement. Réessayez.",
+      blockFailed: "Impossible de bloquer ce profil. Réessayez.",
+      unblockFailed: "Impossible de débloquer. Réessayez.",
+    },
+  },
+
+  settings: {
+    title: "Réglages",
+    back: "← Retour au profil",
+    blockedTitle: "Personnes bloquées",
+    blockedEmpty: "Vous n'avez bloqué personne.",
+    blockedHint:
+      "Une personne débloquée peut réapparaître dans votre fil si vous ne l'avez pas déjà vue. Un match retiré ne revient pas.",
+    unblock: "Débloquer",
+    unblockBusy: "Déblocage…",
+    link: "Réglages et personnes bloquées",
+    loadFailed: "Impossible de charger vos réglages.",
+  },
+
   // Word for word, pending legal review (DEBT-020). Shown on the privacy page built in F8.
   privacy: {
     acquisitionClause:

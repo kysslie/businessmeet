@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { recordSwipe } from "@/app/feed/actions";
 import { m } from "@/lib/messages";
 import { ProfileCard, type FeedCard } from "./profile-card";
+import { SafetyMenu } from "./safety-menu";
 
 // How far (in pixels) a card must be dragged sideways to count as a swipe.
 const SWIPE_DISTANCE = 100;
@@ -176,6 +177,14 @@ export function FeedDeck({ initialCards }: { initialCards: FeedCard[] }) {
       <p className="text-center text-xs text-zinc-500">
         {m.feed.hint(cards.length)}
       </p>
+      <div className="flex justify-center">
+        <SafetyMenu
+          key={card.id}
+          targetId={card.id}
+          name={card.displayName}
+          onBlocked={() => setCards((current) => current.slice(1))}
+        />
+      </div>
     </div>
   );
 }

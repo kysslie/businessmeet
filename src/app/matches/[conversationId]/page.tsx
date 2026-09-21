@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { ProfileCard } from "@/components/profile-card";
+import { SafetyMenu } from "@/components/safety-menu";
 import { UnmatchButton } from "@/components/unmatch-button";
 import { loadPartnerCard } from "@/lib/conversations";
 import { m } from "@/lib/messages";
@@ -87,11 +88,12 @@ export default async function ConversationPage({ params }: PageProps<"/matches/[
         notice={notice}
       />
 
-      {canUnmatch && match.data && (
-        <div className="pt-2">
-          <UnmatchButton matchId={match.data.id} />
-        </div>
-      )}
+      <div className="flex flex-col items-start gap-3 pt-2">
+        {canUnmatch && match.data && <UnmatchButton matchId={match.data.id} />}
+        {card && partnerId && (
+          <SafetyMenu targetId={partnerId} name={card.displayName} afterBlockGoTo="/matches" />
+        )}
+      </div>
     </main>
   );
 }
