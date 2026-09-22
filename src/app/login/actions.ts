@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { homePath } from "@/lib/feature-flags";
 import { m } from "@/lib/messages";
+import { siteOrigin } from "@/lib/site-origin";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, passwordLoginSchema, signUpSchema } from "@/lib/validation/auth";
 
@@ -97,17 +97,6 @@ export async function signUpWithPassword(
 
   if (data.session) redirect(homePath);
   return { status: "confirm", email };
-}
-
-// The address this site is being served from, so the emailed link comes back to the
-// same place (localhost while developing, the Vercel domain in production).
-// Supabase only accepts addresses on its Redirect URLs allow-list.
-async function siteOrigin() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto =
-    h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
 }
 
 export async function requestLoginLink(

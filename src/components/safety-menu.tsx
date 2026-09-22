@@ -93,6 +93,7 @@ export function SafetyMenu({
     return (
       <div className={box} role="alertdialog">
         <p className="text-sm">{m.safety.blockAsk(name)}</p>
+        <p className="text-sm text-zinc-500">{m.safety.blockPublicNote}</p>
         {errorText}
         <div className="flex gap-2">
           <button type="button" onClick={block} disabled={busy} className={primary}>

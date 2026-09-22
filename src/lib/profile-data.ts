@@ -14,7 +14,9 @@ export async function loadProfileForm() {
   if (!userId) return null;
 
   const [profile, postalCode, categories, skills, ownCategories, ownSkills] = await Promise.all([
-    supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", userId).single(),
+    // visibility is required by the onboarding form but not part of the shared column list
+    // (that list is also used for a match partner's card, and visibility isn't relevant there).
+    supabase.from("profiles").select(`${PROFILE_COLUMNS}, visibility`).eq("id", userId).single(),
     supabase.rpc("get_my_postal_code"),
     supabase.from("categories").select("id, name").eq("is_active", true).order("sort_order"),
     supabase.from("skills").select("id, name, category_id").eq("is_active", true).order("name"),

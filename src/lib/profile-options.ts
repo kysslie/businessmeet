@@ -29,6 +29,14 @@ export const AMBITIONS = [
   { value: "full_time", label: m.options.ambitions.full_time },
 ] as const;
 
+// Single choice, no default: the database requires this to be set before onboarding can
+// complete (see migration 20260922110000_portfolio_visibility.sql).
+export const VISIBILITY = [
+  { value: "private", label: m.options.visibility.private, hint: m.options.visibility.privateHint },
+  { value: "members", label: m.options.visibility.members, hint: m.options.visibility.membersHint },
+  { value: "public", label: m.options.visibility.public, hint: m.options.visibility.publicHint },
+] as const;
+
 // The labels people see for a list of stored values, in the order the options are
 // defined ("Revenu complémentaire, Viser le temps plein"). Unknown values are shown as they are.
 export function labelsFor(

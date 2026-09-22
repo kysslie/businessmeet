@@ -5,7 +5,7 @@ import type { Database } from "@/types/database";
 
 // Pages a logged-out visitor may open. Everything else needs a login.
 const PUBLIC_PATHS = ["/", "/login", "/privacy"];
-const PUBLIC_PREFIXES = ["/auth/"];
+const PUBLIC_PREFIXES = ["/auth/", "/p/"];
 
 // Matching pages, parked since the 2026-09-22 pivot (see src/lib/feature-flags.ts). Nothing
 // under these paths is reachable while the flag is off; a direct link sends the visitor home.

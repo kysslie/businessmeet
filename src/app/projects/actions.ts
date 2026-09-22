@@ -36,6 +36,7 @@ export async function saveProject(_previous: ProjectActionResult, formData: Form
     outcome: text("outcome"),
     lessons: text("lessons"),
     siret: text("siret"),
+    visibility: formData.get("visibility") === "public" ? "public" : "private",
   });
   if (!parsed.success) {
     return { ok: false, message: m.projects.errors.saveFailed, fieldErrors: fieldErrorsFrom(parsed.error.issues) };
@@ -52,6 +53,7 @@ export async function saveProject(_previous: ProjectActionResult, formData: Form
     outcome: parsed.data.outcome,
     lessons: parsed.data.lessons,
     siret: parsed.data.siret,
+    visibility: parsed.data.visibility,
   };
 
   const { error } =

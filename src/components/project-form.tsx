@@ -171,6 +171,20 @@ export function ProjectForm({
         {errors.siret && <span className="text-sm font-normal text-red-600 dark:text-red-400">{errors.siret}</span>}
       </label>
 
+      <label className="flex items-start gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          name="visibility"
+          value="public"
+          defaultChecked={project?.visibility === "public"}
+          className="mt-0.5"
+        />
+        <span>
+          {m.projects.publicLabel}
+          <span className="block text-sm font-normal text-zinc-500">{m.projects.publicHint}</span>
+        </span>
+      </label>
+
       {!state.ok && state.message && (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
           {state.message}

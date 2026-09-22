@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { homePath, matchingEnabled } from "@/lib/feature-flags";
 import { m } from "@/lib/messages";
 import { createClient } from "@/lib/supabase/server";
@@ -54,6 +55,7 @@ export async function saveProfile(
     weekly_hours: formData.getAll("weekly_hours"),
     partner_weekly_hours: formData.getAll("partner_weekly_hours"),
     ambitions: formData.getAll("ambitions"),
+    visibility: text("visibility"),
     category_ids: formData.getAll("category_ids"),
     offers: formData.getAll("offers"),
     seeks: formData.getAll("seeks"),
@@ -206,6 +208,7 @@ export async function saveProfile(
       weekly_hours: input.weekly_hours,
       partner_weekly_hours: input.partner_weekly_hours.length === 0 ? null : input.partner_weekly_hours,
       ambitions: input.ambitions,
+      visibility: input.visibility,
       avatar_path: avatarPath,
       onboarded: true,
     })
@@ -228,6 +231,31 @@ export async function saveProfile(
 function failed(step: string, error: { code?: string; message: string }): ProfileFormState {
   console.error(`saveProfile failed while ${step}:`, error.code, error.message);
   return { status: "error", message: m.profile.errors.generic };
+}
+
+export type PortfolioActionResult = { ok: true } | { ok: false; message: string };
+
+// The two "Votre page publique" toggles. `visibility` itself is edited on the main profile
+// form above, not here, since the database requires it to be chosen during onboarding.
+export async function updatePortfolioToggles(
+  openToPartners: boolean,
+  searchIndexable: boolean,
+): Promise<PortfolioActionResult> {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getClaims();
+  const userId = auth?.claims?.sub;
+  if (!userId) return { ok: false, message: m.feed.errors.loggedOut };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ open_to_partners: openToPartners, search_indexable: searchIndexable })
+    .eq("id", userId);
+  if (error) {
+    console.error("updatePortfolioToggles failed:", error.code, error.message);
+    return { ok: false, message: m.portfolio.saveFailed };
+  }
+  revalidatePath("/profile");
+  return { ok: true };
 }
 
 export type ChangePasswordState = {

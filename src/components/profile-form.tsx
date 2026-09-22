@@ -9,6 +9,7 @@ import {
   AMBITIONS,
   IDEA_STATUSES,
   PITCH_MAX_LENGTH,
+  VISIBILITY,
   WEEKLY_HOURS,
   WORK_MODES,
 } from "@/lib/profile-options";
@@ -78,6 +79,39 @@ function Choice({
         {label}
       </span>
     </label>
+  );
+}
+
+// The "who can see your profile" question: a radio choice, each option with its own
+// explanation line, no option pre-checked until the person has one already (an existing
+// profile's current value shows up pre-checked as usual).
+function VisibilityPicker({ selected, onChange }: { selected: string; onChange: (value: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {VISIBILITY.map((option) => (
+        <label
+          key={option.value}
+          className={
+            "flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 " +
+            (selected === option.value
+              ? "border-foreground"
+              : "border-zinc-300 dark:border-zinc-700")
+          }
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="radio"
+              name="visibility"
+              value={option.value}
+              checked={selected === option.value}
+              onChange={() => onChange(option.value)}
+            />
+            {option.label}
+          </span>
+          <span className="pl-6 text-sm text-zinc-500">{option.hint}</span>
+        </label>
+      ))}
+    </div>
   );
 }
 
@@ -174,6 +208,7 @@ export function ProfileForm({
   const [weeklyHours, setWeeklyHours] = useState<string[]>(profile.weekly_hours ?? []);
   const [partnerHours, setPartnerHours] = useState<string[]>(profile.partner_weekly_hours ?? []);
   const [ambitions, setAmbitions] = useState<string[]>(profile.ambitions ?? []);
+  const [visibility, setVisibility] = useState(profile.visibility ?? "");
   const [categoryIds, setCategoryIds] = useState<number[]>(data.categoryIds);
   const [offers, setOffers] = useState<number[]>(data.offers);
   const [seeks, setSeeks] = useState<number[]>(data.seeks);
@@ -303,6 +338,10 @@ export function ProfileForm({
             <FieldError message={errors.postal_code} />
           </div>
         )}
+      </Section>
+
+      <Section legend={m.profile.form.visibilityLegend} error={errors.visibility}>
+        <VisibilityPicker selected={visibility} onChange={setVisibility} />
       </Section>
 
       <Section

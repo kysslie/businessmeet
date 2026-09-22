@@ -130,6 +130,7 @@ export const fr = {
     linkUrlNotHttps: "Seules les adresses en https:// sont acceptées.",
     linkUrlTooLong: (max: number) => `L'adresse ne peut pas dépasser ${max} caractères.`,
     linkKindInvalid: "Choisissez un type de lien.",
+    visibilityRequired: "Choisissez qui peut voir votre profil.",
   },
 
   options: {
@@ -145,6 +146,14 @@ export const fr = {
       for_fun: "Projet perso pour le plaisir",
       side_income: "Revenu complémentaire",
       full_time: "Viser le temps plein",
+    },
+    visibility: {
+      private: "Privé",
+      privateHint: "Seulement moi, mes matchs et mes Parcours.",
+      members: "Membres",
+      membersHint: "Toutes les personnes inscrites. C'est ici que les autres fondateurs peuvent te trouver.",
+      public: "Public",
+      publicHint: "Tout le monde, même sans compte.",
     },
   },
 
@@ -226,6 +235,7 @@ export const fr = {
       seeksLegend: "Compétences que vous cherchez",
       seeksHint: "Facultatif.",
       generalSkills: "Pour toute activité",
+      visibilityLegend: "Qui peut voir ton profil ?",
       submitOnboarding: "Terminer mon profil",
       submitEdit: "Enregistrer les modifications",
       submitBusy: "Enregistrement…",
@@ -284,6 +294,8 @@ export const fr = {
     lessonsPlaceholder: "Qu'est-ce qui a marché, qu'est-ce qui n'a pas marché, que referiez-vous différemment ?",
     siretLabel: "SIRET (facultatif)",
     siretHint: "14 chiffres. Non vérifié auprès d'un registre officiel.",
+    publicLabel: "Rendre ce projet public",
+    publicHint: "Visible sur votre page publique, seulement si votre profil est aussi visible (Membres ou Public).",
     outcomes: {
       idea_abandoned: "Idée abandonnée",
       launched_then_stopped: "Lancé puis arrêté",
@@ -312,6 +324,28 @@ export const fr = {
       linkAddFailed: "Impossible d'ajouter le lien. Réessayez.",
       linkRemoveFailed: "Impossible de retirer le lien. Réessayez.",
       loadFailed: "Impossible de charger vos projets.",
+    },
+  },
+
+  portfolio: {
+    title: "Votre page publique",
+    intro: "Votre lien permanent, à partager où vous voulez.",
+    openToPartnersLabel: "Ouvert aux associés",
+    openToPartnersHint: "Un badge sur votre page publique. Ne change rien à qui peut voir votre profil.",
+    searchIndexableLabel: "Autoriser les moteurs de recherche",
+    searchIndexableHint: "Si activé, votre page publique peut apparaître dans les résultats de recherche.",
+    copyLink: "Copier le lien",
+    linkCopied: "Lien copié.",
+    views: (count: number) => (count === 1 ? "1 visite" : `${count} visites`),
+    saveFailed: "Impossible d'enregistrer. Réessayez.",
+    loadFailed: "Impossible de charger votre page publique.",
+    page: {
+      notFoundTitle: "Profil introuvable",
+      notFoundText: "Cette page n'existe pas, ou n'est pas publique.",
+      openToPartners: "Ouvert aux associés",
+      noProjects: "Aucun projet public pour le moment.",
+      openLink: (title: string) => `Ouvrir ${title} dans un nouvel onglet`,
+      home: "Retour à l'accueil",
     },
   },
 
@@ -485,6 +519,8 @@ export const fr = {
     cancel: "Annuler",
     blockAsk: (name: string) =>
       `Bloquer ${name} ? Vous ne vous verrez plus, ni dans le fil ni dans vos matchs, et aucune conversation ne sera possible. La personne n'en est pas informée.`,
+    blockPublicNote:
+      "Un profil Public reste visible sans connexion, même pour une personne bloquée.",
     blockConfirm: "Oui, bloquer",
     blockBusy: "Blocage…",
     blocked: "Profil bloqué.",

@@ -42,6 +42,7 @@ export const projectSchema = z
       .string()
       .trim()
       .refine((value) => value === "" || /^[0-9]{14}$/.test(value), m.validation.projectSiretFormat),
+    visibility: z.enum(["private", "public"]),
   })
   .superRefine((project, ctx) => {
     const ongoing = project.outcome === "ongoing";

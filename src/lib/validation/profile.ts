@@ -8,6 +8,7 @@ import {
   DISTRICT_MAX_LENGTH,
   IDEA_STATUSES,
   PITCH_MAX_LENGTH,
+  VISIBILITY,
   WEEKLY_HOURS,
   WORK_MODES,
 } from "@/lib/profile-options";
@@ -54,6 +55,8 @@ export const profileSchema = z
     // Optional: an empty list means "no preference".
     partner_weekly_hours: pickMany(values(WEEKLY_HOURS)),
     ambitions: pickMany(values(AMBITIONS), m.validation.ambitionRequired),
+    // No default: the database also refuses to complete onboarding without this.
+    visibility: z.enum(values(VISIBILITY), m.validation.visibilityRequired),
     category_ids: idList.pipe(z.array(z.number()).min(1, m.validation.categoryRequired)),
     offers: idList.pipe(z.array(z.number()).min(1, m.validation.offersRequired)),
     seeks: idList,

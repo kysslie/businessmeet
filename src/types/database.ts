@@ -473,10 +473,15 @@ export type Database = {
           is_demo: boolean
           last_seen_at: string | null
           onboarded: boolean
+          open_to_partners: boolean
+          page_views: number
           partner_weekly_hours: string[] | null
           pitch: string | null
           postal_code: string | null
+          search_indexable: boolean
+          slug: string | null
           updated_at: string
+          visibility: string | null
           weekly_hours: string[] | null
           work_modes: string[] | null
         }
@@ -493,10 +498,15 @@ export type Database = {
           is_demo?: boolean
           last_seen_at?: string | null
           onboarded?: boolean
+          open_to_partners?: boolean
+          page_views?: number
           partner_weekly_hours?: string[] | null
           pitch?: string | null
           postal_code?: string | null
+          search_indexable?: boolean
+          slug?: string | null
           updated_at?: string
+          visibility?: string | null
           weekly_hours?: string[] | null
           work_modes?: string[] | null
         }
@@ -513,10 +523,15 @@ export type Database = {
           is_demo?: boolean
           last_seen_at?: string | null
           onboarded?: boolean
+          open_to_partners?: boolean
+          page_views?: number
           partner_weekly_hours?: string[] | null
           pitch?: string | null
           postal_code?: string | null
+          search_indexable?: boolean
+          slug?: string | null
           updated_at?: string
+          visibility?: string | null
           weekly_hours?: string[] | null
           work_modes?: string[] | null
         }
@@ -825,10 +840,40 @@ export type Database = {
         }[]
       }
       get_my_postal_code: { Args: never; Returns: string }
+      get_public_profile: {
+        Args: { p_slug: string }
+        Returns: {
+          avatar_path: string
+          category_names: string[]
+          city: string
+          country: string
+          display_name: string
+          offers: string[]
+          open_to_partners: boolean
+          search_indexable: boolean
+          seeks: string[]
+        }[]
+      }
+      get_public_projects: {
+        Args: { p_slug: string }
+        Returns: {
+          category_name: string
+          ended_on: string
+          id: string
+          lessons: string
+          links: Json
+          name: string
+          outcome: string
+          role: string
+          started_on: string
+        }[]
+      }
+      increment_page_view: { Args: { p_slug: string }; Returns: undefined }
       invite_to_journey: {
         Args: { p_journey_id: string; p_user_id: string }
         Returns: undefined
       }
+      is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       is_conversation_reader: { Args: { conv: string }; Returns: boolean }
       is_journey_invitee: { Args: { j: string }; Returns: boolean }
       is_journey_member: { Args: { j: string }; Returns: boolean }
@@ -840,6 +885,10 @@ export type Database = {
         Returns: string
       }
       normalize_place: { Args: { place: string }; Returns: string }
+      portfolio_visible_to: {
+        Args: { p_owner_id: string; p_visibility: string }
+        Returns: boolean
+      }
       respond_to_journey_invite: {
         Args: { p_accept: boolean; p_journey_id: string }
         Returns: undefined
