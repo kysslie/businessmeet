@@ -522,6 +522,104 @@ export type Database = {
         }
         Relationships: []
       }
+      project_links: {
+        Row: {
+          created_at: string
+          id: number
+          label: string
+          project_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          label: string
+          project_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          label?: string
+          project_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          category_id: number
+          created_at: string
+          ended_on: string | null
+          hours_per_week: string | null
+          id: string
+          lessons: string
+          name: string
+          outcome: string
+          owner_id: string
+          role: string | null
+          siret: string | null
+          started_on: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          category_id: number
+          created_at?: string
+          ended_on?: string | null
+          hours_per_week?: string | null
+          id?: string
+          lessons: string
+          name: string
+          outcome: string
+          owner_id: string
+          role?: string | null
+          siret?: string | null
+          started_on: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          category_id?: number
+          created_at?: string
+          ended_on?: string | null
+          hours_per_week?: string | null
+          id?: string
+          lessons?: string
+          name?: string
+          outcome?: string
+          owner_id?: string
+          role?: string | null
+          siret?: string | null
+          started_on?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           created_at: string
