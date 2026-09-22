@@ -784,6 +784,23 @@ export type Database = {
         }
         Relationships: []
       }
+      metrics_project_adoption: {
+        Row: {
+          pct_with_a_project: number | null
+          signup_week: string | null
+          signup_week_start: string | null
+          signups: number | null
+          with_a_project: number | null
+        }
+        Relationships: []
+      }
+      metrics_public_pages: {
+        Row: {
+          public_profiles: number | null
+          total_page_views: number | null
+        }
+        Relationships: []
+      }
       metrics_retention_30d: {
         Row: {
           retention_pct: number | null
