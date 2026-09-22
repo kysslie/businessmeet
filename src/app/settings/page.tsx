@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DeleteAccountButton } from "@/components/delete-account-button";
 import { UnblockButton } from "@/components/unblock-button";
 import { m } from "@/lib/messages";
 import { signedPhotoLinks } from "@/lib/photo-links";
 import { createClient } from "@/lib/supabase/server";
 
-// Settings: the people you blocked, with a way to unblock. (Account deletion joins this page in F8.)
+// Settings: the people you blocked, with a way to unblock, and account deletion.
 export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
@@ -64,6 +65,14 @@ export default async function SettingsPage() {
             })}
           </ul>
         )}
+      </section>
+
+      <section className="flex flex-col gap-4 border-t border-zinc-200 pt-8 dark:border-zinc-800">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">{m.settings.deleteAccount.title}</h2>
+          <p className="mt-1 text-sm text-zinc-500">{m.settings.deleteAccount.intro}</p>
+        </div>
+        <DeleteAccountButton />
       </section>
     </main>
   );

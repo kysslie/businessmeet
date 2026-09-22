@@ -24,6 +24,7 @@ export const fr = {
       "Services locaux, artisanat et BTP, restauration, e-commerce et bien plus. Que vous ayez une idée ou envie de rejoindre celle d'un autre, que vous préfériez travailler côte à côte ou à distance, vous êtes le bienvenu.",
     region: "Lancement en Île-de-France. Les profils à distance sont les bienvenus partout.",
     cta: "Se connecter ou créer un compte",
+    accountDeleted: "Votre compte a été supprimé. Toutes vos données ont été effacées.",
     // Elie's wording, word for word. Founding members = the first 100 accounts by creation date.
     pricing:
       "Gratuit pendant toute la phase de lancement. Les 100 premiers membres fondateurs recevront 12 mois de Premium offerts lorsque l'offre payante arrivera.",
@@ -560,11 +561,64 @@ export const fr = {
     unblockBusy: "Déblocage…",
     link: "Réglages et personnes bloquées",
     loadFailed: "Impossible de charger vos réglages.",
+    deleteAccount: {
+      title: "Supprimer mon compte",
+      intro:
+        "Supprime définitivement votre profil, vos projets, votre page publique, vos messages et tout le reste. Cette action est irréversible.",
+      open: "Supprimer mon compte",
+      ask: "Êtes-vous sûr ? Cette action est définitive et ne peut pas être annulée. Saisissez votre mot de passe pour confirmer.",
+      passwordLabel: "Mot de passe",
+      confirm: "Supprimer définitivement mon compte",
+      confirmBusy: "Suppression…",
+      cancel: "Annuler",
+      failed: "Impossible de supprimer le compte. Réessayez, ou contactez-nous si le problème continue.",
+    },
   },
 
-  // Word for word, pending legal review (DEBT-020). Shown on the privacy page built in F8.
+  // A full draft written for P5 (2026-09-23), pending legal review (DEBT-004, DEBT-020, DEBT-022).
+  // Not legal advice. The acquisition clause is Elie's wording, word for word (2026-09-20).
   privacy: {
+    title: "Politique de confidentialité",
+    draftNotice:
+      "Ce texte est un brouillon en attente de relecture juridique et n'est pas un conseil juridique. Il sera revu avant tout lancement public.",
+    intro:
+      "BusinessMeet met en relation des personnes qui veulent lancer un projet. Cette page explique quelles données nous collectons, pourquoi, qui peut les voir, et comment les supprimer.",
+    responsibleTitle: "Responsable du traitement",
+    responsibleBody: "BusinessMeet. Contact : [adresse à compléter par Elie].",
+    dataTitle: "Données que nous collectons",
+    dataBody:
+      "Votre e-mail et votre mot de passe (le mot de passe n'est jamais stocké en clair) ; les informations de votre profil que vous choisissez de renseigner (nom, photo, pays, ville, secteurs d'activité, compétences) ; votre code postal, utilisé uniquement pour vous mettre en relation par zone géographique et jamais montré à personne ; les projets que vous documentez (nom, dates, ce que vous en avez retenu, numéro de SIRET si vous le renseignez) ; les messages que vous échangez ; les blocages et signalements que vous effectuez ; la date de votre dernière visite ; le nombre de vues de votre page publique si vous en activez une.",
+    purposesTitle: "Pourquoi nous les utilisons",
+    purposesBody:
+      "Pour créer et afficher votre profil, pour la mise en relation avec d'autres membres (fonctionnalité actuellement en pause, voir plus bas), pour la messagerie, pour publier votre page publique si vous choisissez de l'activer, pour la sécurité du service (blocages, signalements), et pour des statistiques internes qui ne permettent pas de vous identifier.",
+    whoSeesTitle: "Qui peut voir votre profil",
+    whoSeesBody:
+      "Vous choisissez un niveau de visibilité : Privé (vous-même, vos matchs et vos Parcours), Membres (toute personne inscrite), ou Public (tout le monde, même sans compte). Une page Public reste accessible même à une personne qui vous a bloqué(e), si elle n'est pas connectée : un blocage ne peut s'appliquer qu'à une personne identifiable. Certaines informations (adresse e-mail, code postal exact) ne sont jamais montrées à personne d'autre que vous.",
+    processorsTitle: "Sous-traitants",
+    processorsBody:
+      "Nous utilisons Supabase (hébergement de la base de données, authentification, stockage des photos) et Vercel (hébergement du site). Aucune donnée n'est vendue. Aucun autre tiers n'y a accès aujourd'hui.",
+    cookiesTitle: "Cookies",
+    cookiesBody:
+      "Nous utilisons uniquement des cookies nécessaires au fonctionnement du service : la connexion (gérée par Supabase) et un petit cookie technique qui évite de compter votre visite plus d'une fois par heure. Aucun cookie publicitaire ou de suivi.",
+    retentionTitle: "Durée de conservation",
+    retentionBody:
+      "Vos données sont conservées tant que votre compte existe. Vous pouvez le supprimer à tout moment (voir ci-dessous) ; la suppression est immédiate et définitive.",
+    rightsTitle: "Vos droits",
+    rightsBody:
+      "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, d'opposition et de portabilité de vos données. Vous pouvez modifier votre profil vous-même à tout moment, ou supprimer votre compte depuis la page Réglages. Pour toute autre demande, contactez-nous à l'adresse ci-dessus.",
+    deletionTitle: "Supprimer votre compte",
+    deletionBody:
+      "Depuis Réglages, \"Supprimer mon compte\" efface définitivement votre profil, vos projets, votre page publique, vos messages, vos blocages et signalements, et vos photos. Cette action est immédiate et ne peut pas être annulée.",
+    acquisitionTitle: "En cas de cession de l'entreprise",
     acquisitionClause:
       "En cas de cession, fusion ou acquisition de tout ou partie du service, les données personnelles des utilisateurs pourront être transférées à l'acquéreur, qui sera tenu de respecter la présente politique. Les utilisateurs en seront informés au préalable et pourront supprimer leur compte à tout moment.",
+    ageTitle: "Âge minimum",
+    ageBody:
+      "BusinessMeet est réservé aux personnes de 18 ans ou plus. Cette condition n'est pas encore vérifiée techniquement lors de l'inscription.",
+    changesTitle: "Modifications de cette politique",
+    changesBody:
+      "Si cette politique change de manière significative, nous en informerons les utilisateurs avant que les changements prennent effet.",
+    contactTitle: "Contact",
+    contactBody: "Pour toute question sur vos données : [adresse à compléter par Elie].",
   },
 };
