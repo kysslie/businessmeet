@@ -8,7 +8,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip static files, images, and the PWA files; run on everything else.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Skip static files, images, and the PWA files; run on everything else. icon/apple-icon are
+    // Next.js's generated-icon routes (F9): they have no file extension in the URL even though
+    // they serve an image, so they need to be named here explicitly, the same as favicon.ico.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon$|apple-icon$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

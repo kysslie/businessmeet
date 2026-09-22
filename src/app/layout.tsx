@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { m } from "@/lib/messages";
 import "./globals.css";
@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: m.app.name,
   description: m.app.description,
+  // Better "Add to Home Screen" behavior on iOS (Safari does not read manifest.ts for this).
+  appleWebApp: { capable: true, statusBarStyle: "default", title: m.app.name },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#171717",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
