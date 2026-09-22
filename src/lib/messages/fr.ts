@@ -340,6 +340,15 @@ export const fr = {
     views: (count: number) => (count === 1 ? "1 visite" : `${count} visites`),
     saveFailed: "Impossible d'enregistrer. Réessayez.",
     loadFailed: "Impossible de charger votre page publique.",
+    downloadCard: "Télécharger ma carte",
+    downloadLandscape: "Format paysage (1200 × 630)",
+    downloadSquare: "Format carré (1080 × 1080)",
+    sharePrompt: {
+      message: "Ton portfolio est en ligne. Partage-le à quelqu'un qui devrait le voir.",
+      copyLink: "Copier le lien",
+      linkCopied: "Lien copié.",
+      close: "Fermer",
+    },
     page: {
       notFoundTitle: "Profil introuvable",
       notFoundText: "Cette page n'existe pas, ou n'est pas publique.",

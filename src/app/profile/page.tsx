@@ -4,6 +4,7 @@ import { ChangePasswordForm } from "@/components/change-password-form";
 import { PortfolioSettings } from "@/components/portfolio-settings";
 import { ProfileForm } from "@/components/profile-form";
 import { ProjectList } from "@/components/project-list";
+import { SharePrompt } from "@/components/share-prompt";
 import { matchingEnabled } from "@/lib/feature-flags";
 import { m } from "@/lib/messages";
 import { loadPortfolioSettings } from "@/lib/portfolio";
@@ -25,6 +26,12 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
     siteOrigin(),
   ]);
   const portfolioUrl = portfolio.slug ? `${origin}/p/${portfolio.slug}` : null;
+  const showSharePrompt =
+    !portfolio.sharePromptShown &&
+    portfolioUrl !== null &&
+    data.profile.visibility !== null &&
+    data.profile.visibility !== "private" &&
+    projects.some((project) => project.visibility === "public");
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-6 py-12">
@@ -50,6 +57,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           {m.profile.saved}
         </p>
       )}
+      {showSharePrompt && portfolioUrl && <SharePrompt url={portfolioUrl} />}
       <PortfolioSettings settings={portfolio} url={portfolioUrl} />
       <div className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
         <ProjectList projects={projects} categories={data.categories} />

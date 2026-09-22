@@ -258,6 +258,23 @@ export async function updatePortfolioToggles(
   return { ok: true };
 }
 
+// Marks the one-time "your portfolio is live" prompt (P3b) as seen, so it never shows again.
+// Called the moment it actually renders, not on dismiss, so it only ever shows once regardless
+// of what the person does with it.
+export async function markSharePromptShown(): Promise<PortfolioActionResult> {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getClaims();
+  const userId = auth?.claims?.sub;
+  if (!userId) return { ok: false, message: m.feed.errors.loggedOut };
+
+  const { error } = await supabase.from("profiles").update({ share_prompt_shown: true }).eq("id", userId);
+  if (error) {
+    console.error("markSharePromptShown failed:", error.code, error.message);
+    return { ok: false, message: m.portfolio.saveFailed };
+  }
+  return { ok: true };
+}
+
 export type ChangePasswordState = {
   status: "idle" | "error" | "done";
   message?: string;

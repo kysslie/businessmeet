@@ -479,6 +479,7 @@ export type Database = {
           pitch: string | null
           postal_code: string | null
           search_indexable: boolean
+          share_prompt_shown: boolean
           slug: string | null
           updated_at: string
           visibility: string | null
@@ -504,6 +505,7 @@ export type Database = {
           pitch?: string | null
           postal_code?: string | null
           search_indexable?: boolean
+          share_prompt_shown?: boolean
           slug?: string | null
           updated_at?: string
           visibility?: string | null
@@ -529,6 +531,7 @@ export type Database = {
           pitch?: string | null
           postal_code?: string | null
           search_indexable?: boolean
+          share_prompt_shown?: boolean
           slug?: string | null
           updated_at?: string
           visibility?: string | null

@@ -92,6 +92,28 @@ export function PortfolioSettings({ settings, url }: { settings: Settings; url: 
         </div>
       )}
 
+      {settings.slug && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium">{m.portfolio.downloadCard}</p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={`/p/${settings.slug}/card-landscape.png`}
+              download
+              className="flex h-9 items-center rounded-xl border border-zinc-300 px-3 text-sm font-medium dark:border-zinc-700"
+            >
+              {m.portfolio.downloadLandscape}
+            </a>
+            <a
+              href={`/p/${settings.slug}/card-square.png`}
+              download
+              className="flex h-9 items-center rounded-xl border border-zinc-300 px-3 text-sm font-medium dark:border-zinc-700"
+            >
+              {m.portfolio.downloadSquare}
+            </a>
+          </div>
+        </div>
+      )}
+
       <Toggle
         label={m.portfolio.openToPartnersLabel}
         hint={m.portfolio.openToPartnersHint}
