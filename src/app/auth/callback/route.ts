@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAuthPKCECodeVerifierMissingError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { confirmLoginSchema } from "@/lib/validation/auth";
+import { homePath } from "@/lib/feature-flags";
 
 // Where the emailed login link lands. Supabase's standard link sends people here with
 // a one-time `code`; we swap it for a logged-in session (stored in cookies).
@@ -38,6 +39,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const target = failure ? `/login?error=${failure}` : "/feed";
+  const target = failure ? `/login?error=${failure}` : homePath;
   return NextResponse.redirect(new URL(target, request.url));
 }

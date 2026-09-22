@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { homePath, matchingEnabled } from "@/lib/feature-flags";
 import { m } from "@/lib/messages";
 import { createClient } from "@/lib/supabase/server";
 import { changePasswordSchema } from "@/lib/validation/auth";
@@ -221,7 +222,7 @@ export async function saveProfile(
     if (error) console.error("could not delete old photo:", error.message);
   }
 
-  redirect(currentProfile.data.onboarded ? "/profile?saved=1" : "/feed");
+  redirect(matchingEnabled && !currentProfile.data.onboarded ? homePath : "/profile?saved=1");
 }
 
 function failed(step: string, error: { code?: string; message: string }): ProfileFormState {

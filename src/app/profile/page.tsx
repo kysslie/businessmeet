@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { ProfileForm } from "@/components/profile-form";
+import { matchingEnabled } from "@/lib/feature-flags";
 import { m } from "@/lib/messages";
 import { loadProfileForm } from "@/lib/profile-data";
 
@@ -14,10 +15,14 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-6 py-12">
       <div>
-        <Link href="/feed" className="text-sm text-zinc-500 underline">
-          {m.common.back}
-        </Link>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">{m.profile.title}</h1>
+        {matchingEnabled && (
+          <Link href="/feed" className="text-sm text-zinc-500 underline">
+            {m.common.back}
+          </Link>
+        )}
+        <h1 className={matchingEnabled ? "mt-4 text-3xl font-semibold tracking-tight" : "text-3xl font-semibold tracking-tight"}>
+          {m.profile.title}
+        </h1>
         <Link href="/settings" className="mt-2 inline-block text-sm underline">
           {m.settings.link}
         </Link>

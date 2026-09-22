@@ -1,10 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { homePath, matchingEnabled } from "@/lib/feature-flags";
 import type { Database } from "@/types/database";
 
 // Pages a logged-out visitor may open. Everything else needs a login.
 const PUBLIC_PATHS = ["/", "/login", "/privacy"];
 const PUBLIC_PREFIXES = ["/auth/"];
+
+// Matching pages, parked since the 2026-09-22 pivot (see src/lib/feature-flags.ts). Nothing
+// under these paths is reachable while the flag is off; a direct link sends the visitor home.
+const MATCHING_PREFIXES = ["/feed", "/matches", "/journeys"];
+
+function isMatchingPath(pathname: string) {
+  return MATCHING_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
 
 // "Last seen" is written at most once an hour per person and browser: a short-lived cookie holds
 // the id of the person it was last done for, so most requests make no database call at all (the
@@ -74,7 +83,10 @@ export async function updateSession(request: NextRequest) {
     return redirectTo(request, "/login", response);
   }
   if (loggedIn && pathname === "/login") {
-    return redirectTo(request, "/feed", response);
+    return redirectTo(request, homePath, response);
+  }
+  if (loggedIn && !matchingEnabled && isMatchingPath(pathname)) {
+    return redirectTo(request, homePath, response);
   }
 
   if (markSeen) {

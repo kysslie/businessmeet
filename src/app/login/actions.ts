@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { homePath } from "@/lib/feature-flags";
 import { m } from "@/lib/messages";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, passwordLoginSchema, signUpSchema } from "@/lib/validation/auth";
@@ -57,7 +58,7 @@ export async function signInWithPassword(
     return { status: "error", email, message: m.login.errors.wrongCredentials };
   }
 
-  redirect("/feed");
+  redirect(homePath);
 }
 
 // Create an account with email + password. If the project requires email confirmation
@@ -94,7 +95,7 @@ export async function signUpWithPassword(
     return { status: "error", email, message: m.login.errors.signupFailed };
   }
 
-  if (data.session) redirect("/feed");
+  if (data.session) redirect(homePath);
   return { status: "confirm", email };
 }
 
