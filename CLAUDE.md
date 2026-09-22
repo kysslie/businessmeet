@@ -20,15 +20,15 @@ This file is the single source of truth for this project. Read it fully at the s
 | Field | Value |
 |---|---|
 | **Name** | BusinessMeet (working title) |
-| **What it does** | Dating-app-style matching for people who want to start a project (with or without an idea). Users match on shared venture interests, complementary skills, and commitment level. Chat unlocks only after a mutual like. |
+| **What it does** | **"Le CV de l'entrepreneur"** (pivoted 2026-09-22, see Decision Log): a portfolio app. First-time founders document their projects — including the ones that failed — with what happened, what they learned, and evidence, and share it via a public link (`/p/[slug]`). Dating-app-style matching (swipe, mutual match, chat, Parcours groups) is **parked**, not removed: it becomes a layer on top later, for profiles marked "open to partners". |
 | **Target users** | **First-time founders who want to start a small, non-tech business** (local services and trades, food, e-commerce, and similar), with or without an idea, plus remote-OK people who can help from anywhere. Anyone with a side-project ambition is welcome, including tech (indie games, apps). **All categories are open at launch** (changed 2026-09-19 by Elie; the original launch audience was indie game makers only). |
 | **Launch region** | **Île-de-France**, plus remote-OK profiles from anywhere (Elie, 2026-09-20). |
 | **Pricing at launch** | **100% free.** No payment code, no Stripe. Founding-member wording: see Decision Log 2026-09-20 (E). |
 | **Platform** | Mobile-first web app, installable as a PWA |
 | **Stack** | TypeScript, Next.js (App Router), Supabase (Postgres, Auth, Realtime, Storage), Vercel hosting, Tailwind |
 | **Budget** | €0 during development (free tiers only). Paid plans only at public launch. |
-| **MVP scope** | Sign-up/login, profile, swipe feed, mutual match, 1:1 chat, unmatch, block/report, account deletion, launch metrics (SQL views), installable PWA |
-| **Out of scope for now** | Native apps, payments, AI/algorithmic matching, push or email notifications, LinkedIn import, map/radius search, multi-city, video, admin dashboard, group teams (3+), project pages |
+| **MVP scope** | **(pivoted 2026-09-22)** Sign-up/login, profile, **projects with outcome/lessons/evidence**, **public portfolio page** (`/p/[slug]`), account deletion, French privacy page, launch metrics (SQL views). Swipe feed, mutual match, 1:1 chat, unmatch, block/report and Parcours groups are **built but parked** behind `FEATURE_MATCHING` (default off) — not part of this milestone, not deleted. |
+| **Out of scope for now** | Native apps, payments, AI/algorithmic matching, push or email notifications, LinkedIn import, map/radius search, multi-city, video, admin dashboard, group teams beyond Parcours, one-click co-founder confirmation, written/double-blind project reviews, SIRET verification, pricing. Matching itself is parked (see MVP scope), not "out of scope" — it returns as a layer once projects and "open to partners" exist. |
 
 ---
 
@@ -73,6 +73,8 @@ This file is the single source of truth for this project. Read it fully at the s
 ---
 
 ## 4. Architecture
+
+**Pivot note (2026-09-22):** everything below this note that is about swipes, `get_feed()`, matches, chat or Parcours describes what is **built and still in the database**, but it is **parked behind the `FEATURE_MATCHING` flag** (default off, see Build Plan P1) until the matching layer returns on top of projects and "open to partners" profiles. Nothing here was deleted or rewritten by the pivot. New architecture decisions for projects and the public portfolio page will be added here once P2/P3 are built.
 
 ```
 Browser / installed PWA
@@ -194,6 +196,21 @@ Draft lists written by Claude and approved in principle by Elie; edit them freel
 9. Autre (`other`, renamed from "Other")
 All nine active. This supersedes the earlier decision to fold trades into "Local services & trades". Skill names are translated to French by the same migration (Elie's answer 1). Until it is applied, category and skill names still show in English inside the French app (DEBT-024).
 
+### Planned for the portfolio pivot (Elie, 2026-09-22; NOT built, no migration written yet — these are his exact specs, to be turned into a migration when P2/P3 are built and shown to him first)
+
+```
+profiles (new columns)  slug (unique, auto: firstname + 4 random chars, not editable in MVP),
+                        is_public (bool, default false), search_indexable (bool, default false),
+                        open_to_partners (bool, default false), page_views (int, default 0)
+projects                id, owner_id (→ profiles, cascade), name (1-80), category_id (→ categories),
+                        started_on (month precision), ended_on (nullable = ongoing), role (max 80),
+                        hours_per_week (bucket: lt_5/5_10/10_20/20_plus), outcome (enum:
+                        idea_abandoned/launched_then_stopped/ongoing/sold), lessons (max 500),
+                        siret (optional, exactly 14 digits, format check only), visibility
+                        (public|private, default private), created_at, updated_at
+project_links           id, project_id (cascade), label, url (https only), max 5 per project
+```
+RLS (planned): owner has full CRUD on their own projects/links. Anyone, including logged out, can read a project only if `project.visibility = 'public'` AND the owner's `profiles.is_public = true`. `/p/[slug]`: 404 if not public; `noindex` meta tag if not `search_indexable`. French labels for `outcome`: Idée abandonnée / Lancé puis arrêté / En cours / Revendu — neutral tone, never "échec". `page_views` increments through a database function, for non-owner visitors only, storing no visitor data.
 
 ---
 
@@ -260,20 +277,20 @@ Anything else needs justification and Elie's OK.
 
 ## 9. Build plan (in order, one at a time)
 
+**Pivoted 2026-09-22 to "Le CV de l'entrepreneur" (portfolio-first).** F0–F3 stay as the foundation. Everything about swipe/match/chat/Parcours (F4, F5, F5b, F6, F7, F7b, and Parcours from 2026-09-21) is **built and kept, but parked** behind `FEATURE_MATCHING` (default off) as of P1 below — see the row after F3. The new milestone is P1–P5; F9 (PWA) still comes after.
+
 | # | Feature | Done when |
 |---|---|---|
 | F0 | **Setup.** Check that Node.js LTS and Git are installed (if not, give Elie the exact download links and steps). Scaffold Next.js with TypeScript, Tailwind, ESLint, App Router and `src/`. If the scaffold refuses because the folder isn't empty (CLAUDE.md), scaffold into a temp subfolder and move the files up. Create the Git repo and `.gitignore`. Walk Elie through creating a GitHub repo, a Supabase dev project, and a Vercel project linked to GitHub. Set env vars locally and on Vercel. Deploy. | The live Vercel URL shows the landing page |
 | F1 | Schema migrations, RLS policies, seed data | Tables visible in the Supabase dashboard; RLS checked with test queries |
 | F2 | Magic-link login, logout, route protection | Logged-out users are redirected; login works end to end |
 | F3 | Onboarding and profile edit, including photo upload | A new user completes a profile; edits persist |
-| F4 | Feed and swipe via `get_feed()` | The feed shows only eligible profiles; swiped ones never come back |
-| F5 | Mutual-match trigger and matches list | Two test accounts liking each other both see the match (built, awaiting Elie's confirmation) |
-| F5b | **Category reseed** to the nine-category Île-de-France list, French names for categories and skills (data). PREPARED in `supabase/proposed/`, dry run passed, **waiting for Elie's yes** | Categories and skills shown in French; needs Elie's approval before applying |
-| F6 | **Chat on the conversations model** (built 2026-09-20): migration, realtime 1:1 chat, unmatch (archives the conversation read-only), "Utilisateur supprimé" for deleted accounts | Messages appear live in two browser windows; unmatching archives the chat for both (Elie still has to confirm) |
-| F7 | Block and report (built 2026-09-21): a block also unmatches and hides both users from each other, messages are kept; reasons list + optional details; block list with unblock in `/settings` | A blocked user disappears from the feed and matches; reports are stored (Elie still has to confirm) |
-| F7b | **Launch metrics** (built 2026-09-20): `profiles.last_seen_at` (touched at most hourly), `is_demo`, and the three admin-only SQL views | Exact SQL given to Elie; each view returns sensible rows in the SQL editor |
-| P1 | **Parcours v1** (built 2026-09-21, Elie's core concept, Phase 2 Teams pulled forward at his request): a match becomes a group with a group chat, "Nos outils" links and invitations of your other matches; 1:1 chat unchanged | Two accounts: one starts a parcours from a conversation, the other accepts; both chat and share links; a third match can be invited; leaving works (not yet confirmed by Elie) |
-| F8 | Account deletion, **French privacy page** (with the acquisition clause, marked "pending legal review"), landing-page pricing line (French) | Deleting an account removes all of that user's rows; the privacy page and landing line are live |
+| *(parked)* | **Matching, built but PARKED 2026-09-22 behind `FEATURE_MATCHING`** (default off; not deleted, not confirmed by Elie before the pivot): feed/swipe via `get_feed()` (F4), mutual-match trigger + list (F5), category reseed proposal (F5b, still unapplied), chat on conversations + unmatch (F6), block/report (F7), launch metrics on matches (F7b), Parcours groups (2026-09-21). Returns later as a layer on "open to partners" profiles | The flag hides all of its nav entries and routes when off; flipping it to `true` brings everything back exactly as built |
+| P1 | **Park matching.** Add `FEATURE_MATCHING` (server-only env var, default unset/false); `src/proxy.ts` and nav links hide/block feed, matches, conversations and journeys when off; nothing in the database changes. Also record only, do not build: parking decision C (conversations model) and the feed lock/counter | With the flag off, no matching link or page is reachable and the app still builds/lints/type-checks clean; with it on, the F4–F7b + Parcours flow works exactly as before (regression: the 367 database checks still pass, unaffected) |
+| P2 | **Projects.** `projects` + `project_links` tables and RLS (see Data model); "Mes projets" list + create/edit/delete form on the profile | Owner can add/edit/delete a project with up to 5 links; nobody else can read a private one |
+| P3 | **Public portfolio page.** `profiles` gets `slug`/`is_public`/`search_indexable`/`open_to_partners`/`page_views`; route `/p/[slug]` shows public projects only; visibility toggles + "Copier le lien" on the profile; view counter | A public profile's page loads for a logged-out visitor with only public info; a private one 404s; a non-indexable one carries `noindex` |
+| P4 | **Metrics for the new milestone**, replacing the match-based ones: `metrics_active_profiles` (kept), `metrics_project_adoption`, `metrics_public_pages`, all admin-only, excluding `is_demo` | Exact SQL given to Elie; each view returns sensible numbers |
+| P5 | *(was F8)* Account deletion (cascades projects and links too), **French privacy page** (with the acquisition clause, marked "pending legal review") | Deleting an account removes all of that user's rows including projects/links; the privacy page is live; DEBT-021 BLOCKER clears |
 | F9 | PWA install (manifest, icons), production check, full smoke test | The app installs on a phone home screen; the whole flow works in production |
 
 Give Elie a simple way to test with two accounts (e.g. two email addresses, or a normal window plus a private window).
@@ -284,7 +301,7 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 ## Build Ledger
 
-**Current milestone:** MVP
+**Current milestone:** MVP — **"Le CV de l'entrepreneur"** (pivoted 2026-09-22 from swipe-to-match; see Decision Log and section 9). Matching (F4–F7b, Parcours) is built, kept, and parked behind `FEATURE_MATCHING` pending P1.
 
 **Completed features:**
 - F0 — Setup (confirmed by Elie 2026-09-19). Live at https://businessmeet.vercel.app/. GitHub: kysslie/businessmeet. Vercel gotcha: Framework Preset must be Next.js.
@@ -303,9 +320,11 @@ Give Elie a simple way to test with two accounts (e.g. two email addresses, or a
 
 - F5 — Mutual-match trigger and matches list (validated by Elie 2026-09-21: "matched and sent a message, it's all good"). Database evidence: John (liked Marco Demo earlier) and Marco Demo matched at 20:21 UTC on 2026-09-21 and one message was sent from Marco's side. Built with migration `20260919200000_mutual_match_trigger.sql`, then rebuilt on conversations on 2026-09-20. **Not yet confirmed by him:** receiving the message on the other side, live delivery in two windows, unmatch, phone layout (all on his list below).
 
-**In progress:** P1 — **Parcours v1** (Elie's core concept, 2026-09-21). Built and applied 2026-09-21 (migration `20260921110000_journeys.sql`, new tables only, no existing data touched; the two helper functions `is_conversation_reader` and `is_match_partner` were extended). Test script 367/367 (79 new checks: start/accept/decline/invite/leave, limits, blocks, https-only links, archive with fewer than 2 active members, group chat privacy, account deletion). Browser-tested by me with three throwaway users (deleted): start from a conversation, invited person sees only name and goal until accepting, accept, group chat with sender names, links (javascript: and http:// refused, "chat.whatsapp.com/..." gets https:// added, links open in a new tab), invite a second match, rename, leave, archived view read-only. NOT yet confirmed by Elie. Elie's choices: name "Parcours"; v1 = group chat + links + invite your matches; one person starts and the other accepts; the 1:1 chat stays untouched. Not in v1 (Backlog): public parcours pages/recruiting, projects, roles, editing/reordering links, notifications.
+**Built pre-pivot, kept, PARKED behind `FEATURE_MATCHING` (see P1):**
 
-**Also, F7 — Block and report.** Built and applied 2026-09-21 (migration `20260921100000_block_report.sql`); security/chat/block test script 288/288; browser-tested by me with three throwaway users (deleted): report from a conversation (reason + details, stored, readable in `admin_reports`), block from a conversation (match marked ended by the blocker, conversation archived, messages kept, redirect to the matches list), block list in `/settings` with unblock, block of a stranger straight from the swipe feed, and the blocked person's side (hidden, no notice). NOT yet confirmed by Elie. Also waiting on Elie: his yes on the French category migration (`supabase/proposed/`).
+- **Parcours v1** (Elie's core concept, 2026-09-21). Built and applied 2026-09-21 (migration `20260921110000_journeys.sql`, new tables only, no existing data touched; the two helper functions `is_conversation_reader` and `is_match_partner` were extended). Test script 367/367 (79 new checks: start/accept/decline/invite/leave, limits, blocks, https-only links, archive with fewer than 2 active members, group chat privacy, account deletion). Browser-tested by me with three throwaway users (deleted): start from a conversation, invited person sees only name and goal until accepting, accept, group chat with sender names, links (javascript: and http:// refused, "chat.whatsapp.com/..." gets https:// added, links open in a new tab), invite a second match, rename, leave, archived view read-only. NOT yet confirmed by Elie — the pivot arrived first. Elie's choices: name "Parcours"; v1 = group chat + links + invite your matches; one person starts and the other accepts; the 1:1 chat stays untouched. Not in v1 (Backlog): public parcours pages/recruiting, projects, roles, editing/reordering links, notifications.
+
+- **F7 — Block and report.** Built and applied 2026-09-21 (migration `20260921100000_block_report.sql`); security/chat/block test script 288/288 at the time (later 367/367 with Parcours added); browser-tested by me with three throwaway users (deleted): report from a conversation (reason + details, stored, readable in `admin_reports`), block from a conversation (match marked ended by the blocker, conversation archived, messages kept, redirect to the matches list), block list in `/settings` with unblock, block of a stranger straight from the swipe feed, and the blocked person's side (hidden, no notice). NOT yet confirmed by Elie.
 
 **Also built on 2026-09-20 after Elie's answers, tested by me and NOT yet confirmed by him:** (1) French-only UI with one messages file; (2) postal code + Île-de-France zone matching (migration `20260920100000`); (3) chat on conversations, live messages, unmatch, "Utilisateur supprimé" (migration `20260920110000`); (4) launch metrics: `last_seen_at` (hourly), `is_demo`, 3 views, backfill of the 4 accounts (migration `20260920120000`); (5) private columns (migration `20260920130000`, applied after the new code was live); (6) landing page pricing line with **100** founding members, French not-found and error pages. Security/feed/chat/metrics test script: 253/253. Browser-tested by me with throwaway users (deleted): French onboarding with the postal-code rules, feed zones, mutual match, live delivery of a message sent from another connection, unmatch (chat archived, nothing deleted), deleted-account display, last-seen throttle; production smoke test (login, feed, profile, matches, French 404). NOT done: the French category/skill data (waiting for Elie), the privacy page (F8).
 
@@ -317,7 +336,7 @@ How to work with the database from here (no Docker, no password prompt needed on
 - Automatic security check: `npx supabase@2.117.0 db advisors --linked`
 - Every new migration must also revoke default grants and grant only what is needed, then enable RLS (see migration 2).
 
-**Next planned step:** Elie's feedback on Parcours v1, his yes or changes on the French category migration (`supabase/proposed/`), then his real-account tests (see Pending tests). After that F7 (block and report: a block also unmatches and hides both users from each other; the database rules for reading are already block-aware) and F8 (account deletion, privacy page, see DEBT-021 BLOCKER).
+**Next planned step:** P1 — park matching behind `FEATURE_MATCHING`. Plan given to Elie 2026-09-22, waiting for his OK before building (see chat). After that P2 (projects). The French category migration (`supabase/proposed/`) and Elie's matching-related tests stay pending but are no longer blocking — they can wait until matching is re-enabled.
 
 **Elie's answers of 2026-09-20 to the open questions** (all applied above; each also has a Decision Log entry):
 1. French only for the launch, skill names included; one French messages file, no i18n library.
@@ -373,6 +392,10 @@ To do, in this order (demo logins: Ana and Marco were given to Elie in chat):
 **Ideas file:** `ideas.txt` in the project root is Elie's private scratchpad for future ideas. It is git-ignored (never committed). Read it at the start of each session; move anything worth keeping into the Backlog below, in Elie's words.
 
 **Backlog (post-MVP):**
+- **Re-enable matching**: flip `FEATURE_MATCHING` on once projects and "open to partners" profiles exist. The swipe/match/chat/Parcours code, tables and RLS stay built and tested from 2026-09-19/20/21 work (see the parked row in section 9); this is a flag flip plus wiring matching to "open to partners", not a rebuild.
+- **Renaming the product** from the working title "BusinessMeet" (pivot doc, 2026-09-22) — no name chosen yet.
+- **Landing page copy**: use a placeholder for now; Elie will provide the final French text for the pivoted product (pivot doc, 2026-09-22).
+- **One-click co-founder confirmation** of a project: naming a co-founder publicly needs their consent, so this needs its own flow. Next phase after P2 (pivot doc, 2026-09-22).
 - **Phase 2 – Teams** (Elie, 2026-09-20; v1 was pulled forward on 2026-09-21 as "Parcours", see P1 and the Decision Log; everything below that v1 does not include stays here):
   - A match can become a team; teams recruit new members via matching; team chat uses conversations of type `group`.
   - Team page with "Our tools": saved external links (WhatsApp, Discord, X, Google Drive, website, other). Private invite links (WhatsApp, Discord, Drive) are visible to team members only; public links (X, website) to everyone. HTTPS links only; open in a new tab with `rel="noopener noreferrer"`.
@@ -430,6 +453,7 @@ Format: `date | decision | rejected alternatives | reason`
 - 2026-09-20 | **Not applied yet: French category and skill data** (Elie's decision A + answer 1). Written, dry-run-tested and kept in `supabase/proposed/20260920140000_categories_fr.sql` because it renames/moves existing rows and was not on the list of approved migrations | Applying it with the others | Elie's rule: ask before any migration that alters existing data
 - 2026-09-21 | **F7 block and report** (Claude's design, per Elie's plan of a block that hides both users from each other with no further contact): a trigger on `blocks` ends any match between the two people (`unmatched_at`/`unmatched_by`) and archives their conversation, so it works however a block is recorded; reading conversations and profiles was already refused between blocked people (F6), the feed and the match trigger already skipped them; the blocked person is never told; unblocking removes the block but a match that was ended stays ended (they can only meet again in the feed if they never swiped on each other); `get_blocked_profiles()` (definer) feeds the block list because a block hides the other person's profile from you too; reports are stored with a short reason key plus optional details and are read only through the admin-only view `admin_reports`; the menu sits under swipe cards and on conversations | Deleting the match and messages on block (breaks the archive rule); letting the reported person see they were reported | Elie's rule: nothing is deleted, nobody is notified
 - 2026-09-21 | **Parcours v1** (Elie: "turn a match into a group... a more powerful chat, with stored links"; answers: name Parcours, v1 = group chat + links + members invite their matches, one person starts and the other accepts, 1:1 chat untouched). Claude's design, migration `20260921110000_journeys.sql`: a parcours owns a group conversation (F6 model, type `group`); either matched person starts it and the other is INVITED (nobody is added without saying yes; a decline removes an empty parcours); an active member can invite only people they have an active match with, never someone blocked from or blocking a current member, at most 10 people; leaving keeps everything, and with fewer than 2 active members the parcours and its chat are archived read-only (nothing deleted; also when a member deletes their account); only active members read the parcours, its links and chat; co-members can see each other's profile (blocks respected); all changes to members go through four database functions (start, invite, respond, leave), the tables allow only reading plus editing name/goal and adding/removing links; in a group chat a block between two members does not hide the chat from the others (the 1:1 rule is unchanged); links must be https:// (the form adds it to a bare address; javascript:/http:/spaces refused by the app AND a database CHECK) and open in a new tab with `noopener noreferrer`; `journey_links.visibility` is stored (private for WhatsApp/Discord/Drive/other, public for X/website) but no public page exists yet | Making the parcours from the 1:1 conversation itself (would change the 1:1 chat); adding members without acceptance; open groups anyone can join | Keeps the 1:1 chat safe, no unwanted group adds, small and reviewable. Consequence: an invited stranger appears as "Quelqu'un" to members who did not match them
+- 2026-09-22 | **Pivot: "Le CV de l'entrepreneur"** (Elie): the product pivots from swipe-to-match to a portfolio app — founders document projects, including failed ones, with outcome/lessons/evidence, shared via a public link (`/p/[slug]`); matching becomes a later layer on top, gated by "open to partners". New milestone order: P1 park matching behind `FEATURE_MATCHING` (default off), P2 projects, P3 public portfolio page, P4 metrics, P5 account deletion + privacy page (was F8). Nothing built for matching is deleted — F4–F7b and Parcours (built 2026-09-19/20/21, mostly unconfirmed by Elie) stay in the code and database, hidden behind the flag, to return later. Target audience, launch region, French-only UI, postal code, `is_demo`, founding members = 100 all carry over unchanged | Deleting the matching feature entirely | Elie's product call; keeps the matching work for later without blocking the new milestone or forcing Elie to confirm features that are about to be hidden
 - 2026-09-19 | Next.js 16.3.5 (React 19, Tailwind 4, ESLint 9) scaffolded with create-next-app; `AGENTS.md` from the scaffold kept (tells AI tools to check bundled Next.js docs) | — | Current stable versions; matches the "check current docs" rule
 
 ## Debt Ledger
